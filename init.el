@@ -1,4 +1,4 @@
-	;; -*- mode: emacs-lisp; lexical-binding: t -*-
+;; -*- mode: emacs-lisp; lexical-binding: t -*-
 ;; This file is loaded by Spacemacs at startup.
 ;; It must be stored in your home directory.
 
@@ -38,31 +38,19 @@ This function should only modify configuration layer settings."
      ;; Uncomment some layer names and press `SPC f e R' (Vim style) or
      ;; `M-m f e R' (Emacs style) to install them.
      ;; ----------------------------------------------------------------
-     (auto-completion :variables
-                      auto-completion-return-key-behavior 'complete
-                      auto-completion-tab-key-behavior 'cycle
-                      auto-completion-complete-with-key-sequence nil
-                      auto-completion-complete-with-key-sequence-delay 0.1
-                      auto-completion-minimum-prefix-length 2
-                      auto-completion-idle-delay 0.2
-                      auto-completion-private-snippets-directory nil
-                      auto-completion-enable-snippets-in-popup t
-                      auto-completion-enable-help-tooltip t
-                      auto-completion-use-company-box nil
-                      auto-completion-enable-sort-by-usage t
-                      spacemacs-default-company-backends '(company-files company-capf)
-                      )
-     better-defaults
-     chinese
+    (auto-completion :variables auto-completion-enable-sort-by-usage t) ;; 如果你有这个，保留
+better-defaults
+    (chinese :variables
+              chinese-conv-backend "cconv"
+              chinese-enable-youdao-dict t)
      ;;emacs-lisp
-     (helm :variables
-           helm-enable-auto-resize t
-           )
-     ;; ;; lsp
-     ;; (compleseus :variables
-     ;;             compleseus-engine 'vertico
-     ;;             compleseus-consult-preview-keys '("M-." "C-SPC" :debounce 0.5 "<up>" "<down>")
-     ;;             )
+  (helm :variables
+      helm-enable-auto-resize t)
+     lsp
+;;(compleseus :variables
+;;           compleseus-engine 'vertico
+ ;;          compleseus-consult-preview-keys '("M-." "C-SPC" :debounce 0.5 "<up>" "<down>")
+ ;;           )
      markdown
      ;;multiple-cursors
      (org :variables
@@ -72,12 +60,14 @@ This function should only modify configuration layer settings."
           org-enable-transclusion-support t
           org-enable-roam-support t
           org-enable-roam-ui t 
-          org-roam-directory "~/org/roam/"
+          org-enable-modern-support t
+          org-enable-appear-support t
           )
      ;; (shell :variables
      ;;        shell-default-height 30
      ;;        shell-default-position 'bottom)
      ;; spell-checking
+     pdf
      syntax-checking
      (git :variables
           git-magit-status-fullscreen t
@@ -98,7 +88,17 @@ This function should only modify configuration layer settings."
    ;; `dotspacemacs/user-config'. To use a local version of a package, use the
    ;; `:location' property: '(your-package :location "~/path/to/your-package/")
    ;; Also include the dependencies as they will not be resolved automatically.
-   dotspacemacs-additional-packages '()
+   dotspacemacs-additional-packages '(
+                                      ;; --- 普通包 (从 MELPA/GNU ELPA 查找) ---
+                                      fsrs
+                                      pyim-basedict
+                                      ;; --- 自定义源包 (通过 recipe 从 GitHub 安装) ---
+                                      ;; pyim-greatdict
+                                      (pyim-greatdict :location (recipe :fetcher github :repo "tumashu/pyim-greatdict"))
+                                      orderless
+                                      (org-srs :location (recipe :fetcher github :repo "bohonghuang/org-srs"))
+                                      pinyinlib 
+                                      )
 
    ;; A list of packages that cannot be updated.
    dotspacemacs-frozen-packages '()
@@ -469,7 +469,7 @@ It should only modify the values of Spacemacs settings."
    ;; If non-nil pressing the closing parenthesis `)' key in insert mode passes
    ;; over any automatically added closing parenthesis, bracket, quote, etc...
    ;; This can be temporary disabled by pressing `C-q' before `)'. (default nil)
-   dotspacemacs-smart-closing-parenthesis nil
+   dotspacemacs-smart-closing-parenthesis t
 
    ;; Select a scope to highlight delimiters. Possible values are `any',
    ;; `current', `all' or `nil'. Default is `all' (highlight any scope and
@@ -532,7 +532,7 @@ It should only modify the values of Spacemacs settings."
    ;; Color highlight trailing whitespace in all prog-mode and text-mode derived
    ;; modes such as c++-mode, python-mode, emacs-lisp, html-mode, rst-mode etc.
    ;; (default t)
-   dotspacemacs-show-trailing-whitespace t
+   dotspacemacs-show-trailing-whitespace nil
 
    ;; Delete whitespace while saving buffer. Possible values are `all'
    ;; to aggressively delete empty line and long sequences of whitespace,
@@ -542,7 +542,7 @@ It should only modify the values of Spacemacs settings."
    ;; which major modes have whitespace cleanup enabled or disabled
    ;; by default.
    ;; (default nil)
-   dotspacemacs-whitespace-cleanup changed
+   dotspacemacs-whitespace-cleanup nil
 
    ;; If non-nil activate `clean-aindent-mode' which tries to correct
    ;; virtual indentation of simple modes. This can interfere with mode specific
@@ -592,6 +592,8 @@ This function is called immediately after `dotspacemacs/init', before layer
 configuration.
 It is mostly for variables that should be set before packages are loaded.
 If you are unsure, try setting them in `dotspacemacs/user-config' first."
+  (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
+
 )
 
 
@@ -603,18 +605,107 @@ configuration.
 Put your configuration code here, except for variables that should be set
 before packages are loaded."
 
+  ;; org-modern
+  (with-eval-after-load 'org-modern
+    ;; 将 org-modern-mode 添加到 org-mode 的 hook 中
+    ;; 这将使得每次进入 org-mode 时，org-modern-mode 都会自动激活
+    (add-hook 'org-mode-hook #'org-modern-mode)
+    (setq org-superstar-headline-bullets-list '(?■ ?◆ ?▲ ?▶))
+    )
 
-  ;; ;; --- 快捷键设置 (Escape 功能) ---
-  ;; ;; 设置快速连按 "jk" 作为 Escape
-  ;; (setq evil-escape-key-sequence "jk")
-  ;; ;; 设置按键之间的时间间隔，单位是秒 (0.2 秒 = 200 毫秒)
-  ;; (setq evil-escape-delay 0.2)
 
-  ;; --- 设置rg可以搜索中文 ---
-(set-language-environment "UTF-8")
-(add-to-list 'process-coding-system-alist
-                      '("[rR][gG]" . (utf-8 . gbk-dos)))
-(setq-default buffer-file-coding-system 'utf-8)
+  ;; --- Org Mode 和 Org-roam 配置 ---
+;; Org-roam 笔记的存储目录，通常是你的主 org-directory 的一个子目录。
+;; 确保这个目录存在。
+(setq org-directory "~/org/")
+(setq org-roam-directory (file-truename "~/org/roam/"))
+
+(setq org-agenda-files (list "~/org/"
+                             "~/org/roam" 
+                             "~/org/roam/daily"))
+
+(use-package websocket
+  :after org-roam)
+
+;; --- Org-roam-UI 配置 ---
+(use-package org-roam-ui
+  :after org-roam ; 确保 org-roam 加载后才加载 org-roam-ui
+  :config
+  (setq org-roam-ui-sync-theme t  ; 使 UI 同步 Emacs 主题
+        org-roam-ui-follow t      ; 在 Emacs 中切换节点时，UI 自动跟随
+        org-roam-ui-update-on-save t ; 保存 Org 文件时，UI 自动更新
+        org-roam-ui-open-on-start t)) ; Emacs 启动时自动打开 Org-roam-UI (可选，可能会增加启动时间)
+
+;; 设置deft搜索你的笔记目录为 ~/org
+(setq deft-directory "~/org/")
+;; 确保 Deft 也会递归搜索子目录
+(setq deft-recursive t)
+;; 设置 Deft 扫描的文件类型
+;; 如果你的 Org 笔记通常是 .org 扩展名，请确保包含它
+(setq deft-extensions '("txt" "md" "org"))
+;; 可选：如果你希望 Deft 不仅搜索文件名，还搜索文件内容摘要
+;; 并且你的 Org 文件包含 Org-mode 语法，可以启用解析
+(setq deft-parse-org t)
+
+
+
+  ;; company-mode 补全后端配置
+  (setq company-backends
+        '(
+          company-capf                  ;; 通用补全后端 (functions, vars, files)
+          company-yasnippet             ;; Yasnippet 代码片段补全
+          company-files                 ;; 文件路径补全
+          company-dabbrev-code          ;; 编程模式下的单词补全 (来自当前缓冲区及相关文件)
+          company-etags                 ;; 如果你使用 etags, 基于函数和变量定义补全
+          ;; 其他特定语言的后端 (如果需要，如 company-go, company-web)
+          ))
+
+  ;; ... company-backends 配置 ...
+
+  ;; Company Mode 行为优化
+  (setq company-idle-delay 0.05               ;; 补全弹窗延迟 (秒), 越小越灵敏
+        company-minimum-prefix-length 1       ;; 最少输入多少字符开始补全, 越小越早触发
+        company-tooltip-limit 15              ;; 补全列表显示的最大项数
+        company-selection-wrap-around t       ;; 补全列表循环选择
+        company-show-numbers t                ;; 显示补全项的序号 (方便通过数字选择)
+        company-tooltip-flip-when-above t     ;; 当空间不足时，补全列表在光标上方显示
+        company-tooltip-minimum-width 30      ;; 补全提示框的最小宽度
+        company-auto-commit t                 ;; 补全时自动提交常见前缀 (谨慎开启，可能改变习惯)
+        )
+
+  ;; 在所有模式下全局启用 company-mode
+  (global-company-mode t)
+
+  ;; PyIM Input Method
+  (with-eval-after-load 'pyim
+    (setq default-input-method "pyim")
+    (pyim-default-scheme 'microsoft-shuangpin)
+    (pyim-greatdict-enable)
+    (pyim-basedict-enable)
+   (setq pyim-cloudim 'baidu)
+    (add-hook 'emacs-startup-hook (lambda () (pyim-restart-1 t)))
+    (define-key pyim-mode-map "." 'pyim-page-next-page)
+    (define-key pyim-mode-map "," 'pyim-page-previous-page)
+    (setq pyim-pinyin-fuzzy-alist nil))
+
+  (global-set-key (kbd "C-c i") 'pyim-toggle-input-ascii)
+
+  ;; --- 1. 配置 fsrs ---
+  (with-eval-after-load 'fsrs
+    ;; 放置 fsrs 的其他配置，如果有的话
+    ;; 例如：(setq fsrs-default-deck "~/path/to/my-fsrs-deck.org")
+    )
+
+  ;; --- 2. 配置 org-srs ---
+  (with-eval-after-load 'org
+    (require 'org-srs)
+    (add-hook 'org-mode-hook #'org-srs-embed-overlay-mode)
+    (spacemacs/set-leader-keys-for-major-mode 'org-mode-map
+      "jj" 'org-srs-review-rate-again ; j for Again (最难)
+      "jk" 'org-srs-review-rate-hard  ; k for Hard
+      "jl" 'org-srs-review-rate-good  ; l for Good
+      "j;" 'org-srs-review-rate-easy)  ; ; for Easy (最易)
+    ) ; End of (with-eval-after-load 'org) block
   )
 
 
@@ -625,59 +716,60 @@ before packages are loaded."
 This is an auto-generated function, do not modify its content directly, use
 Emacs customize menu instead.
 This function is called at the very end of Spacemacs initialization."
-  (custom-set-variables
-   ;; custom-set-variables was added by Custom.
-   ;; If you edit it by hand, you could mess it up, so be careful.
-   ;; Your init file should contain only one such instance.
-   ;; If there is more than one, they won't work right.
-   '(package-selected-packages
-     '(ace-jump-helm-line ace-link aggressive-indent all-the-icons auto-compile
-                          auto-highlight-symbol auto-yasnippet browse-at-remote
-                          centered-cursor-mode clean-aindent-mode closql
-                          code-review column-enforce-mode company-quickhelp
-                          company-statistics define-word devdocs diff-hl diminish
-                          dired-quick-sort disable-mouse dotenv-mode drag-stuff
-                          dumb-jump edit-indirect elisp-def elisp-demos
-                          elisp-slime-nav emacsql emr eval-sexp-fu evil-anzu
-                          evil-args evil-cleverparens evil-collection
-                          evil-easymotion evil-escape evil-evilified-state
-                          evil-exchange evil-goggles evil-iedit-state
-                          evil-indent-plus evil-lion evil-lisp-state evil-matchit
-                          evil-mc evil-multiedit evil-nerd-commenter evil-numbers
-                          evil-org evil-surround evil-textobj-line evil-tutor
-                          evil-unimpaired evil-visual-mark-mode evil-visualstar
-                          expand-region eyebrowse fancy-battery flycheck-elsa
-                          flycheck-package flycheck-pos-tip gh-md git-link
-                          git-messenger git-modes git-timemachine
-                          gitignore-templates gnuplot golden-ratio
-                          google-translate helm-ag helm-c-yasnippet helm-comint
-                          helm-company helm-descbinds helm-git-grep helm-ls-git
-                          helm-make helm-mode-manager helm-org helm-org-rifle
-                          helm-projectile helm-purpose helm-swoop helm-themes
-                          helm-xref hide-comnt highlight-indentation
-                          highlight-numbers highlight-parentheses hl-todo
-                          holy-mode htmlize hungry-delete hybrid-mode indent-guide
-                          info+ inspector link-hint lorem-ipsum macrostep magit
-                          markdown-toc multi-line mwim nameless open-junk-file
-                          org-cliplink org-contrib org-download org-mime
-                          org-pomodoro org-present org-projectile org-rich-yank
-                          org-superstar orgit overseer page-break-lines paradox
-                          password-generator pcre2el popwin quickrun
-                          rainbow-delimiters restart-emacs smeargle space-doc
-                          spaceline spacemacs-purpose-popwin
-                          spacemacs-whitespace-cleanup string-edit-at-point
-                          string-inflection symbol-overlay symon term-cursor
-                          toc-org transient treemacs-evil treemacs-icons-dired
-                          treemacs-magit treemacs-persp treemacs-projectile
-                          undo-fu undo-fu-session unfill uuidgen vi-tilde-fringe
-                          volatile-highlights vundo wgrep winum with-editor
-                          writeroom-mode ws-butler yasnippet-snippets))
-   '(warning-suppress-log-types '((use-package))))
-  (custom-set-faces
-   ;; custom-set-faces was added by Custom.
-   ;; If you edit it by hand, you could mess it up, so be careful.
-   ;; Your init file should contain only one such instance.
-   ;; If there is more than one, they won't work right.
-   '(company-tooltip-common ((t (:inherit company-tooltip :weight bold :underline nil))))
-   '(company-tooltip-common-selection ((t (:inherit company-tooltip-selection :weight bold :underline nil)))))
-  )
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(line-number-mode t)
+ '(package-selected-packages
+   '(ace-jump-helm-line ace-link aggressive-indent all-the-icons auto-compile
+                        auto-highlight-symbol auto-yasnippet browse-at-remote
+                        centered-cursor-mode clean-aindent-mode closql
+                        code-review column-enforce-mode company-quickhelp
+                        company-statistics define-word devdocs diff-hl diminish
+                        dired-quick-sort disable-mouse dotenv-mode drag-stuff
+                        dumb-jump edit-indirect elisp-def elisp-demos
+                        elisp-slime-nav emacsql emr eval-sexp-fu evil-anzu
+                        evil-args evil-cleverparens evil-collection
+                        evil-easymotion evil-escape evil-evilified-state
+                        evil-exchange evil-goggles evil-iedit-state
+                        evil-indent-plus evil-lion evil-lisp-state evil-matchit
+                        evil-mc evil-multiedit evil-nerd-commenter evil-numbers
+                        evil-org evil-surround evil-textobj-line evil-tutor
+                        evil-unimpaired evil-visual-mark-mode evil-visualstar
+                        expand-region eyebrowse fancy-battery flycheck-elsa
+                        flycheck-package flycheck-pos-tip gh-md git-link
+                        git-messenger git-modes git-timemachine
+                        gitignore-templates gnuplot golden-ratio
+                        google-translate helm-ag helm-c-yasnippet helm-comint
+                        helm-company helm-descbinds helm-git-grep helm-ls-git
+                        helm-make helm-mode-manager helm-org helm-org-rifle
+                        helm-projectile helm-purpose helm-swoop helm-themes
+                        helm-xref hide-comnt highlight-indentation
+                        highlight-numbers highlight-parentheses hl-todo
+                        holy-mode htmlize hungry-delete hybrid-mode indent-guide
+                        info+ inspector link-hint lorem-ipsum macrostep magit
+                        markdown-toc multi-line mwim nameless open-junk-file
+                        org-cliplink org-contrib org-download org-mime
+                        org-pomodoro org-present org-projectile org-rich-yank
+                        org-superstar orgit overseer page-break-lines paradox
+                        password-generator pcre2el popwin quickrun
+                        rainbow-delimiters restart-emacs smeargle space-doc
+                        spaceline spacemacs-purpose-popwin
+                        spacemacs-whitespace-cleanup string-edit-at-point
+                        string-inflection symbol-overlay symon term-cursor
+                        toc-org transient treemacs-evil treemacs-icons-dired
+                        treemacs-magit treemacs-persp treemacs-projectile
+                        undo-fu undo-fu-session unfill uuidgen vi-tilde-fringe
+                        volatile-highlights vundo wgrep winum with-editor
+                        writeroom-mode ws-butler yasnippet-snippets))
+ '(warning-suppress-log-types '((use-package))))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(company-tooltip-common ((t (:inherit company-tooltip :weight bold :underline nil))))
+ '(company-tooltip-common-selection ((t (:inherit company-tooltip-selection :weight bold :underline nil)))))
+)
