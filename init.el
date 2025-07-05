@@ -38,7 +38,7 @@ This function should only modify configuration layer settings."
      ;; Uncomment some layer names and press `SPC f e R' (Vim style) or
      ;; `M-m f e R' (Emacs style) to install them.
      ;; ----------------------------------------------------------------
- (auto-completion :variables
+     (auto-completion :variables
                       auto-completion-return-key-behavior 'complete
                       auto-completion-tab-key-behavior 'cycle
                       auto-completion-complete-with-key-sequence (kbd "jk")
@@ -54,13 +54,12 @@ This function should only modify configuration layer settings."
               chinese-conv-backend "cconv"
               chinese-enable-youdao-dict t)
      ;; emacs-lisp
-     ;; (helm :variables
-     ;;       helm-enable-auto-resize t)
+     ;;helm
      ;; lsp
      (compleseus :variables
-               compleseus-engine 'vertico
-              compleseus-consult-preview-keys '("M-." "C-SPC" :debounce 0.5 "<up>" "<down>")
-               )
+                 compleseus-engine 'vertico
+                 compleseus-consult-preview-keys '("M-." "C-SPC" :debounce 0.5 "<up>" "<down>")
+                 )
      markdown
      ;;multiple-cursors
      (org :variables
@@ -269,7 +268,7 @@ It should only modify the values of Spacemacs settings."
    ;; a non-negative integer (pixel size), or a floating-point (point size).
    ;; Point size is recommended, because it's device independent. (default 10.0)
    dotspacemacs-default-font '("Source Code Pro"
-                               :size 12.0
+                               :size 14.0
                                :weight normal
                                :width normal)
 
@@ -572,7 +571,7 @@ It should only modify the values of Spacemacs settings."
    ;; Run `spacemacs/prettify-org-buffer' when
    ;; visiting README.org files of Spacemacs.
    ;; (default nil)
-   dotspacemacs-pretty-docs nil
+   dotspacemacs-pretty-docs t
 
    ;; If nil the home buffer shows the full path of agenda items
    ;; and todos. If non-nil only the file name is shown.
@@ -638,42 +637,40 @@ before packages are loaded."
           org-roam-ui-update-on-save t ; 保存 Org 文件时，UI 自动更新
           org-roam-ui-open-on-start t)) ; Emacs 启动时自动打开 Org-roam-UI (可选，可能会增加启动时间)
 
-(require 'pyim)
-(require 'pyim-basedict)
-(require 'pyim-cregexp-utils)
-(require 'pyim-greatdict)
+  (require 'pyim)
+  (require 'pyim-basedict)
+  (require 'pyim-cregexp-utils)
+  (require 'pyim-greatdict)
 
-;; 如果使用 pyim-dregcache dcache 后端，就需要加载 pyim-dregcache 包。
-(require 'pyim-dregcache)
-(setq pyim-dcache-backend 'pyim-dregcache)
+  ;; 如果使用 pyim-dregcache dcache 后端，就需要加载 pyim-dregcache 包。
+  (require 'pyim-dregcache)
+  (setq pyim-dcache-backend 'pyim-dregcache)
 
-;; 加载 basedict 拼音词库。
-(pyim-basedict-enable)
-(pyim-greatdict-enable)
+  ;; 加载 basedict 拼音词库。
+  (pyim-basedict-enable)
+  (pyim-greatdict-enable)
 
-;; 将 Emacs 默认输入法设置为 pyim.
-(setq default-input-method "pyim")
+  ;; 将 Emacs 默认输入法设置为 pyim.
+  (setq default-input-method "pyim")
 
-;; 设置 pyim 默认使用的输入法策略，微软双拼。
-(pyim-default-scheme 'microsoft-shuangpin)
+  ;; 设置 pyim 默认使用的输入法策略，微软双拼。
+  (pyim-default-scheme 'microsoft-shuangpin)
 
-;; 设置 pyim 是否使用云拼音
-(setq pyim-cloudim 'baidu)
+  ;; 设置 pyim 是否使用云拼音
+  (setq pyim-cloudim 'baidu)
 
-;; 开启代码搜索中文功能（比如拼音，五笔码等）
-(pyim-isearch-mode 1)
+  ;;取消模糊音
+  (setq pyim-pinyin-fuzzy-alist nil)
+  ;; 开启代码搜索中文功能（比如拼音，五笔码等）
+  (pyim-isearch-mode 1)
 
-;;取消模糊音
-(setq pyim-pinyin-fuzzy-alist nil)
-;; 开启代码搜索中文功能（比如拼音，五笔码等）
-(pyim-isearch-mode 1)
+  ;;让 vertico, selectrum 等补全框架，通过 orderless 支持拼音搜索候选项功能
+  (defun my-orderless-regexp (orig-func component)
+    (let ((result (funcall orig-func component)))
+      (pyim-cregexp-build result)))
 
-;;让 vertico, selectrum 等补全框架，通过 orderless 支持拼音搜索候选项功能
-(defun my-orderless-regexp (orig-func component)
-  (let ((result (funcall orig-func component)))
-    (pyim-cregexp-build result)))
+  (advice-add 'orderless-regexp :around #'my-orderless-regexp)
 
-(advice-add 'orderless-regexp :around #'my-orderless-regexp)
 
 (use-package fsrs
   :defer t)
@@ -684,17 +681,11 @@ before packages are loaded."
   ;; 为 Org 模式绑定快捷键到 Spacemacs 的 SPC m (mode-specific) 前缀
   ;; 这样更符合 Spacemacs 的按键哲学，避免与全局快捷键冲突
   (evil-leader/set-key-for-mode 'org-mode
-    "mr" 'org-srs-review-rate-easy   ;; SPC m r: 标记为“容易”
+    "me" 'org-srs-review-rate-easy   ;; SPC m e: 标记为“容易”
     "mg" 'org-srs-review-rate-good   ;; SPC m g: 标记为“好”
     "mh" 'org-srs-review-rate-hard   ;; SPC m h: 标记为“困难”
     "ma" 'org-srs-review-rate-again) ;; SPC m a: 标记为“重来”
-
-  ;; 如果你仍然更喜欢使用 F 键，也可以保留以下绑定（选择性开启）
-  ;; (define-key org-mode-map (kbd "<f5>") 'org-srs-review-rate-easy)
-  ;; (define-key org-mode-map (kbd "<f6>") 'org-srs-review-rate-good)
-  ;; (define-key org-mode-map (kbd "<f7>") 'org-srs-review-rate-hard)
-  ;; (define-key org-mode-map (kbd "<f8>") 'org-srs-review-rate-again)
-  )
+    )
 
   )
 
@@ -713,47 +704,25 @@ This function is called at the very end of Spacemacs initialization."
    ;; If there is more than one, they won't work right.
    '(line-number-mode t)
    '(package-selected-packages
-     '(ace-jump-helm-line ace-link aggressive-indent all-the-icons auto-compile
-                          auto-highlight-symbol auto-yasnippet browse-at-remote
-                          centered-cursor-mode clean-aindent-mode closql
-                          code-review column-enforce-mode company-quickhelp
-                          company-statistics define-word devdocs diff-hl diminish
-                          dired-quick-sort disable-mouse dotenv-mode drag-stuff
-                          dumb-jump edit-indirect elisp-def elisp-demos
-                          elisp-slime-nav emacsql emr eval-sexp-fu evil-anzu
-                          evil-args evil-cleverparens evil-collection
-                          evil-easymotion evil-escape evil-evilified-state
-                          evil-exchange evil-goggles evil-iedit-state
-                          evil-indent-plus evil-lion evil-lisp-state evil-matchit
-                          evil-mc evil-multiedit evil-nerd-commenter evil-numbers
-                          evil-org evil-surround evil-textobj-line evil-tutor
-                          evil-unimpaired evil-visual-mark-mode evil-visualstar
-                          expand-region eyebrowse fancy-battery flycheck-elsa
-                          flycheck-package flycheck-pos-tip gh-md git-link
-                          git-messenger git-modes git-timemachine
-                          gitignore-templates gnuplot golden-ratio
-                          google-translate helm-ag helm-c-yasnippet helm-comint
-                          helm-company helm-descbinds helm-git-grep helm-ls-git
-                          helm-make helm-mode-manager helm-org helm-org-rifle
-                          helm-projectile helm-purpose helm-swoop helm-themes
-                          helm-xref hide-comnt highlight-indentation
-                          highlight-numbers highlight-parentheses hl-todo
-                          holy-mode htmlize hungry-delete hybrid-mode indent-guide
-                          info+ inspector link-hint lorem-ipsum macrostep magit
-                          markdown-toc multi-line mwim nameless open-junk-file
-                          org-cliplink org-contrib org-download org-mime
-                          org-pomodoro org-present org-projectile org-rich-yank
-                          org-superstar orgit overseer page-break-lines paradox
-                          password-generator pcre2el popwin quickrun
-                          rainbow-delimiters restart-emacs smeargle space-doc
-                          spaceline spacemacs-purpose-popwin
-                          spacemacs-whitespace-cleanup string-edit-at-point
-                          string-inflection symbol-overlay symon term-cursor
-                          toc-org transient treemacs-evil treemacs-icons-dired
-                          treemacs-magit treemacs-persp treemacs-projectile
-                          undo-fu undo-fu-session unfill uuidgen vi-tilde-fringe
-                          volatile-highlights vundo wgrep winum with-editor
-                          writeroom-mode ws-butler yasnippet-snippets))
+     '(ace-jump-helm-line ace-link aggressive-indent all-the-icons auto-compile auto-highlight-symbol auto-yasnippet browse-at-remote centered-cursor-mode clean-aindent-mode closql code-review column-enforce-mode company-quickhelp company-statistics define-word devdocs diff-hl diminish dired-quick-sort disable-mouse dotenv-mode drag-stuff dumb-jump edit-indirect elisp-def elisp-demos elisp-slime-nav emacsql emr eval-sexp-fu evil-anzu evil-args evil-cleverparens evil-collection evil-easymotion evil-escape evil-evilified-state evil-exchange evil-goggles evil-iedit-state evil-indent-plus evil-lion evil-lisp-state evil-matchit evil-mc evil-multiedit evil-nerd-commenter evil-numbers evil-org evil-surround evil-textobj-line evil-tutor evil-unimpaired evil-visual-mark-mode evil-visualstar expand-region eyebrowse fancy-battery flycheck-elsa flycheck-package flycheck-pos-tip gh-md git-link git-messenger git-modes git-timemachine gitignore-templates gnuplot golden-ratio google-translate helm-ag helm-c-yasnippet helm-comint helm-company helm-descbinds helm-git-grep helm-ls-git helm-make helm-mode-manager helm-org helm-org-rifle helm-projectile helm-purpose helm-swoop helm-themes helm-xref hide-comnt highlight-indentation highlight-numbers highlight-parentheses hl-todo holy-mode htmlize hungry-delete hybrid-mode indent-guide info+ inspector link-hint lorem-ipsum macrostep magit markdown-toc multi-line mwim nameless open-junk-file org-cliplink org-contrib org-download org-mime org-pomodoro org-present org-projectile org-rich-yank org-superstar orgit overseer page-break-lines paradox password-generator pcre2el popwin quickrun rainbow-delimiters restart-emacs smeargle space-doc spaceline spacemacs-purpose-popwin spacemacs-whitespace-cleanup string-edit-at-point string-inflection symbol-overlay symon term-cursor toc-org transient treemacs-evil treemacs-icons-dired treemacs-magit treemacs-persp treemacs-projectile undo-fu undo-fu-session unfill uuidgen vi-tilde-fringe volatile-highlights vundo wgrep winum with-editor writeroom-mode ws-butler yasnippet-snippets))
+   '(safe-local-variable-values
+     '((eval require 'magit-utils nil t)
+       (toc-org-max-depth . 2)
+       (org-hide-macro-markers . t)
+       (buffer-file-coding-system . utf-8-unix)
+       (eval auto-fill-mode t)
+       (eval require 'ox-texinfo+ nil t)
+       (eval require 'ol-info)
+       (org-src-preserve-indentation . t)
+       (org-src-preserve-indentation)
+       (eval require 'ol-man nil t)
+       (eval require 'magit-base nil t)
+       (eval require 'org-make-toc)
+       (eval when
+             (featurep 'toc-org)
+             (toc-org-mode))
+       (org-list-indent-offset . 1)
+       (toc-org-max-depth . 4)))
    '(warning-suppress-log-types '((use-package))))
   (custom-set-faces
    ;; custom-set-faces was added by Custom.
@@ -762,4 +731,4 @@ This function is called at the very end of Spacemacs initialization."
    ;; If there is more than one, they won't work right.
    '(company-tooltip-common ((t (:inherit company-tooltip :weight bold :underline nil))))
    '(company-tooltip-common-selection ((t (:inherit company-tooltip-selection :weight bold :underline nil)))))
-  ) 
+  )
