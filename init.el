@@ -69,7 +69,7 @@ This function should only modify configuration layer settings."
           org-enable-transclusion-support t
           org-enable-roam-support t
           org-enable-roam-ui t
-          org-enable-modern-support t
+          ;; org-enable-modern-support t  ;;使用termux请注释掉，对于org-srs有影响，界面支持也不好
           org-enable-appear-support t
           )
      ;; (shell :variables
@@ -606,70 +606,68 @@ configuration.
 Put your configuration code here, except for variables that should be set
 before packages are loaded."
 
-  ;; org-modern
-  (with-eval-after-load 'org-modern
-    ;; 将 org-modern-mode 添加到 org-mode 的 hook 中
-    ;; 这将使得每次进入 org-mode 时，org-modern-mode 都会自动激活
-    (add-hook 'org-mode-hook #'org-modern-mode)
-    (setq org-superstar-headline-bullets-list '(?■ ?◆ ?▲ ?▶))
-    )
 
+;; --- Org Mode 和 Org-roam 配置 ---
+;; Org-roam 笔记的存储目录，通常是你的主 org-directory 的一个子目录。
+;; 确保这个目录存在。
+(setq org-directory "~/org/")
+(setq org-roam-directory (file-truename "~/org/roam/"))
 
-  ;; --- Org Mode 和 Org-roam 配置 ---
-  ;; Org-roam 笔记的存储目录，通常是你的主 org-directory 的一个子目录。
-  ;; 确保这个目录存在。
-  (setq org-directory "~/org/")
-  (setq org-roam-directory (file-truename "~/org/roam/"))
+(setq org-agenda-files (list "~/org/"
+                             "~/org/roam"
+                             "~/org/roam/daily"))
 
-  (setq org-agenda-files (list "~/org/"
-                               "~/org/roam"
-                               "~/org/roam/daily"))
+(use-package websocket
+  :after org-roam)
 
-  (use-package websocket
-    :after org-roam)
+;; --- 配置pyim输入法 ---
+(require 'pyim)
+(require 'pyim-greatdict)
+(require 'pyim-cregexp-utils)
+(require 'pyim-cstring-utils)
 
-  ;; --- Org-roam-UI 配置 ---
-  (use-package org-roam-ui
-    :after org-roam ; 确保 org-roam 加载后才加载 org-roam-ui
-    :config
-    (setq org-roam-ui-sync-theme t  ; 使 UI 同步 Emacs 主题
-          org-roam-ui-follow t      ; 在 Emacs 中切换节点时，UI 自动跟随
-          org-roam-ui-update-on-save t ; 保存 Org 文件时，UI 自动更新
-          org-roam-ui-open-on-start t)) ; Emacs 启动时自动打开 Org-roam-UI (可选，可能会增加启动时间)
+(setq default-input-method "pyim")
+(pyim-default-scheme 'microsoft-shuangpin)
+(pyim-basedict-enable)
+(pyim-greatdict-enable)
+(setq pyim-cloudim 'baidu)
+(setq pyim-cloudim 'google)
+(require 'pyim-dregcache)
+(setq pyim-dcache-backend 'pyim-dregcache)
+;;Emacs 启动时加载 pyim 词库
+(add-hook 'emacs-startup-hook
+          (lambda () (pyim-restart-1 t)))
 
-  (require 'pyim)
-  (require 'pyim-basedict)
-  (require 'pyim-cregexp-utils)
-  (require 'pyim-greatdict)
+;; 输入法内切换中英文输入
+(spacemacs/set-leader-keys "oj" #'pyim-toggle-input-ascii)
 
-  ;; 如果使用 pyim-dregcache dcache 后端，就需要加载 pyim-dregcache 包。
-  (require 'pyim-dregcache)
-  (setq pyim-dcache-backend 'pyim-dregcache)
+;;use posframe
+(require 'posframe)
+(setq pyim-page-tooltip 'posframe)
 
-  ;; 加载 basedict 拼音词库。
-  (pyim-basedict-enable)
-  (pyim-greatdict-enable)
+;;取消模糊音
+(setq pyim-pinyin-fuzzy-alist nil)
 
-  ;; 将 Emacs 默认输入法设置为 pyim.
-  (setq default-input-method "pyim")
+;; 开启代码搜索中文功能（比如拼音，五笔码等）
+(pyim-isearch-mode 1)
 
-  ;; 设置 pyim 默认使用的输入法策略，微软双拼。
-  (pyim-default-scheme 'microsoft-shuangpin)
+;;让 avy 支持拼音搜索
+(with-eval-after-load 'avy
+  (defun my-avy--regex-candidates (fun regex &optional beg end pred group)
+    (let ((regex (pyim-cregexp-build regex)))
+      (funcall fun regex beg end pred group)))
+  (advice-add 'avy--regex-candidates :around #'my-avy--regex-candidates))
 
-  ;; 设置 pyim 是否使用云拼音
-  (setq pyim-cloudim 'baidu)
+;;让 vertico, selectrum 等补全框架，通过 orderless 支持拼音搜索候选项功能
+(defun my-orderless-regexp (orig-func component)
+  (let ((result (funcall orig-func component)))
+    (pyim-cregexp-build result)))
 
-  ;;取消模糊音
-  (setq pyim-pinyin-fuzzy-alist nil)
-  ;; 开启代码搜索中文功能（比如拼音，五笔码等）
-  (pyim-isearch-mode 1)
+(advice-add 'orderless-regexp :around #'my-orderless-regexp)
 
-  ;;让 vertico, selectrum 等补全框架，通过 orderless 支持拼音搜索候选项功能
-  (defun my-orderless-regexp (orig-func component)
-    (let ((result (funcall orig-func component)))
-      (pyim-cregexp-build result)))
-
-  (advice-add 'orderless-regexp :around #'my-orderless-regexp)
+;;使用其它字符翻页
+(define-key pyim-mode-map "." 'pyim-page-next-page)
+(define-key pyim-mode-map "," 'pyim-page-previous-page)
 
   ;; 确保 Pyim 在 Minibuffer 中显示时，候选词显示在下一行
   (with-eval-after-load 'pyim-page
@@ -712,7 +710,6 @@ before packages are loaded."
     "mh" 'org-srs-review-rate-hard   ;; SPC m h: 标记为“困难”
     "ma" 'org-srs-review-rate-again) ;; SPC m a: 标记为“重来”
     )
-
   )
 
 
