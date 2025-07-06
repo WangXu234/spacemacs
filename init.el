@@ -671,6 +671,32 @@ before packages are loaded."
 
   (advice-add 'orderless-regexp :around #'my-orderless-regexp)
 
+  ;; 确保 Pyim 在 Minibuffer 中显示时，候选词显示在下一行
+  (with-eval-after-load 'pyim-page
+    ;; 重新定义 minibuffer 样式下的格式化函数
+    (cl-defmethod pyim-page-info-format ((_style (eql minibuffer)) page-info)
+      "将 PAGE-INFO 格式化为选词框中显示的字符串，实现输入内容和候选词分行显示。
+       例如：
+       nihao
+       1.你好 2.你号 ... (1/9)
+      "
+      (let* ((preview-string (pyim-page-preview-create
+                              (plist-get page-info :scheme)))
+             (assistant-suffix (if (plist-get page-info :assistant-enable) " (辅)" ""))
+             (menu-string (pyim-page-menu-create
+                           (plist-get page-info :candidates)
+                           (plist-get page-info :position)
+                           nil
+                           (plist-get page-info :hightlight-current)))
+             (current-page (plist-get page-info :current-page))
+             (total-page (plist-get page-info :total-page)))
+        ;; 调整这里，将预览部分和候选词部分分开
+        (format "%s%s\n%s (%s/%s)"
+                preview-string
+                assistant-suffix
+                menu-string
+                current-page
+                total-page))))
 
 (use-package fsrs
   :defer t)
