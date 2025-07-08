@@ -595,6 +595,20 @@ This function is called immediately after `dotspacemacs/init', before layer
 configuration.
 It is mostly for variables that should be set before packages are loaded.
 If you are unsure, try setting them in `dotspacemacs/user-config' first."
+
+  (setq package-archives '(("gnu"    . "https://mirrors.tuna.tsinghua.edu.cn/elpa/gnu/")
+                           ("nongnu" . "https://mirrors.tuna.tsinghua.edu.cn/elpa/nongnu/")
+                           ("melpa"  . "https://mirrors.tuna.tsinghua.edu.cn/elpa/melpa/")))
+  (package-initialize) ;; You might already have this line
+
+  (setq configuration-layer-elpa-archives
+        '(("melpa-cn" . "https://mirrors.tuna.tsinghua.edu.cn/elpa/melpa/")
+          ("org-cn"   . "https://mirrors.tuna.tsinghua.edu.cn/elpa/org/")
+          ("gnu-cn"   . "https://mirrors.tuna.tsinghua.edu.cn/elpa/gnu/")))
+
+  ;; 解决 evil-collection 警告
+  (setq evil-want-keybinding nil)
+
   )
 
 
@@ -605,7 +619,6 @@ This function is called at the very end of Spacemacs startup, after layer
 configuration.
 Put your configuration code here, except for variables that should be set
 before packages are loaded."
-
 
 ;; --- Org Mode 和 Org-roam 配置 ---
 ;; Org-roam 笔记的存储目录，通常是你的主 org-directory 的一个子目录。
@@ -720,38 +733,38 @@ before packages are loaded."
 This is an auto-generated function, do not modify its content directly, use
 Emacs customize menu instead.
 This function is called at the very end of Spacemacs initialization."
-  (custom-set-variables
-   ;; custom-set-variables was added by Custom.
-   ;; If you edit it by hand, you could mess it up, so be careful.
-   ;; Your init file should contain only one such instance.
-   ;; If there is more than one, they won't work right.
-   '(line-number-mode t)
-   '(package-selected-packages
-     '(ace-jump-helm-line ace-link aggressive-indent all-the-icons auto-compile auto-highlight-symbol auto-yasnippet browse-at-remote centered-cursor-mode clean-aindent-mode closql code-review column-enforce-mode company-quickhelp company-statistics define-word devdocs diff-hl diminish dired-quick-sort disable-mouse dotenv-mode drag-stuff dumb-jump edit-indirect elisp-def elisp-demos elisp-slime-nav emacsql emr eval-sexp-fu evil-anzu evil-args evil-cleverparens evil-collection evil-easymotion evil-escape evil-evilified-state evil-exchange evil-goggles evil-iedit-state evil-indent-plus evil-lion evil-lisp-state evil-matchit evil-mc evil-multiedit evil-nerd-commenter evil-numbers evil-org evil-surround evil-textobj-line evil-tutor evil-unimpaired evil-visual-mark-mode evil-visualstar expand-region eyebrowse fancy-battery flycheck-elsa flycheck-package flycheck-pos-tip gh-md git-link git-messenger git-modes git-timemachine gitignore-templates gnuplot golden-ratio google-translate helm-ag helm-c-yasnippet helm-comint helm-company helm-descbinds helm-git-grep helm-ls-git helm-make helm-mode-manager helm-org helm-org-rifle helm-projectile helm-purpose helm-swoop helm-themes helm-xref hide-comnt highlight-indentation highlight-numbers highlight-parentheses hl-todo holy-mode htmlize hungry-delete hybrid-mode indent-guide info+ inspector link-hint lorem-ipsum macrostep magit markdown-toc multi-line mwim nameless open-junk-file org-cliplink org-contrib org-download org-mime org-pomodoro org-present org-projectile org-rich-yank org-superstar orgit overseer page-break-lines paradox password-generator pcre2el popwin quickrun rainbow-delimiters restart-emacs smeargle space-doc spaceline spacemacs-purpose-popwin spacemacs-whitespace-cleanup string-edit-at-point string-inflection symbol-overlay symon term-cursor toc-org transient treemacs-evil treemacs-icons-dired treemacs-magit treemacs-persp treemacs-projectile undo-fu undo-fu-session unfill uuidgen vi-tilde-fringe volatile-highlights vundo wgrep winum with-editor writeroom-mode ws-butler yasnippet-snippets))
-   '(safe-local-variable-values
-     '((eval require 'magit-utils nil t)
-       (toc-org-max-depth . 2)
-       (org-hide-macro-markers . t)
-       (buffer-file-coding-system . utf-8-unix)
-       (eval auto-fill-mode t)
-       (eval require 'ox-texinfo+ nil t)
-       (eval require 'ol-info)
-       (org-src-preserve-indentation . t)
-       (org-src-preserve-indentation)
-       (eval require 'ol-man nil t)
-       (eval require 'magit-base nil t)
-       (eval require 'org-make-toc)
-       (eval when
-             (featurep 'toc-org)
-             (toc-org-mode))
-       (org-list-indent-offset . 1)
-       (toc-org-max-depth . 4)))
-   '(warning-suppress-log-types '((use-package))))
-  (custom-set-faces
-   ;; custom-set-faces was added by Custom.
-   ;; If you edit it by hand, you could mess it up, so be careful.
-   ;; Your init file should contain only one such instance.
-   ;; If there is more than one, they won't work right.
-   '(company-tooltip-common ((t (:inherit company-tooltip :weight bold :underline nil))))
-   '(company-tooltip-common-selection ((t (:inherit company-tooltip-selection :weight bold :underline nil)))))
-  )
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(line-number-mode t)
+ '(package-selected-packages
+   '(org-modern pyim ace-jump-helm-line ace-link aggressive-indent all-the-icons auto-compile auto-highlight-symbol auto-yasnippet browse-at-remote centered-cursor-mode clean-aindent-mode closql code-review column-enforce-mode company-quickhelp company-statistics define-word devdocs diff-hl diminish dired-quick-sort disable-mouse dotenv-mode drag-stuff dumb-jump edit-indirect elisp-def elisp-demos elisp-slime-nav emacsql emr eval-sexp-fu evil-anzu evil-args evil-cleverparens evil-collection evil-easymotion evil-escape evil-evilified-state evil-exchange evil-goggles evil-iedit-state evil-indent-plus evil-lion evil-lisp-state evil-matchit evil-mc evil-multiedit evil-nerd-commenter evil-numbers evil-org evil-surround evil-textobj-line evil-tutor evil-unimpaired evil-visual-mark-mode evil-visualstar expand-region eyebrowse fancy-battery flycheck-elsa flycheck-package flycheck-pos-tip gh-md git-link git-messenger git-modes git-timemachine gitignore-templates gnuplot golden-ratio google-translate helm-ag helm-c-yasnippet helm-comint helm-company helm-descbinds helm-git-grep helm-ls-git helm-make helm-mode-manager helm-org helm-org-rifle helm-projectile helm-purpose helm-swoop helm-themes helm-xref hide-comnt highlight-indentation highlight-numbers highlight-parentheses hl-todo holy-mode htmlize hungry-delete hybrid-mode indent-guide info+ inspector link-hint lorem-ipsum macrostep magit markdown-toc multi-line mwim nameless open-junk-file org-cliplink org-contrib org-download org-mime org-pomodoro org-present org-projectile org-rich-yank org-superstar orgit overseer page-break-lines paradox password-generator pcre2el popwin quickrun rainbow-delimiters restart-emacs smeargle space-doc spaceline spacemacs-purpose-popwin spacemacs-whitespace-cleanup string-edit-at-point string-inflection symbol-overlay symon term-cursor toc-org transient treemacs-evil treemacs-icons-dired treemacs-magit treemacs-persp treemacs-projectile undo-fu undo-fu-session unfill uuidgen vi-tilde-fringe volatile-highlights vundo wgrep winum with-editor writeroom-mode ws-butler yasnippet-snippets))
+ '(safe-local-variable-values
+   '((eval require 'magit-utils nil t)
+     (toc-org-max-depth . 2)
+     (org-hide-macro-markers . t)
+     (buffer-file-coding-system . utf-8-unix)
+     (eval auto-fill-mode t)
+     (eval require 'ox-texinfo+ nil t)
+     (eval require 'ol-info)
+     (org-src-preserve-indentation . t)
+     (org-src-preserve-indentation)
+     (eval require 'ol-man nil t)
+     (eval require 'magit-base nil t)
+     (eval require 'org-make-toc)
+     (eval when
+           (featurep 'toc-org)
+           (toc-org-mode))
+     (org-list-indent-offset . 1)
+     (toc-org-max-depth . 4)))
+ '(warning-suppress-log-types '((use-package))))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(company-tooltip-common ((t (:inherit company-tooltip :weight bold :underline nil))))
+ '(company-tooltip-common-selection ((t (:inherit company-tooltip-selection :weight bold :underline nil)))))
+)
