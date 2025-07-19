@@ -69,7 +69,7 @@ This function should only modify configuration layer settings."
           org-enable-transclusion-support t
           org-enable-roam-support t
           org-enable-roam-ui t
-          ;; org-enable-modern-support t  ;;使用termux请注释掉，对于org-srs有影响，界面支持也不好
+          org-enable-valign t
           org-enable-appear-support t
           )
      ;; (shell :variables
@@ -98,10 +98,11 @@ This function should only modify configuration layer settings."
    ;; `:location' property: '(your-package :location "~/path/to/your-package/")
    ;; Also include the dependencies as they will not be resolved automatically.
    dotspacemacs-additional-packages '(
-                                      fsrs
-                                      (org-srs :location (recipe :fetcher github :repo "bohonghuang/org-srs"))
                                       (pyim-greatdict :location (recipe :fetcher github :repo "tumashu/pyim-greatdict")) ; Large dictionary
-                                      )
+                                      org-daily-reflection
+                                      org-drill
+vulpea
+   )
 
    ;; A list of packages that cannot be updated.
    dotspacemacs-frozen-packages '()
@@ -268,7 +269,7 @@ It should only modify the values of Spacemacs settings."
    ;; a non-negative integer (pixel size), or a floating-point (point size).
    ;; Point size is recommended, because it's device independent. (default 10.0)
    dotspacemacs-default-font '("Source Code Pro"
-                               :size 14.0
+                               :size 12.0
                                :weight normal
                                :width normal)
 
@@ -472,7 +473,7 @@ It should only modify the values of Spacemacs settings."
    ;; If non-nil pressing the closing parenthesis `)' key in insert mode passes
    ;; over any automatically added closing parenthesis, bracket, quote, etc...
    ;; This can be temporary disabled by pressing `C-q' before `)'. (default nil)
-   dotspacemacs-smart-closing-parenthesis t
+   dotspacemacs-smart-closing-parenthesis nil
 
    ;; Select a scope to highlight delimiters. Possible values are `any',
    ;; `current', `all' or `nil'. Default is `all' (highlight any scope and
@@ -545,7 +546,7 @@ It should only modify the values of Spacemacs settings."
    ;; which major modes have whitespace cleanup enabled or disabled
    ;; by default.
    ;; (default nil)
-   dotspacemacs-whitespace-cleanup nil
+   dotspacemacs-whitespace-cleanup `trailing
 
    ;; If non-nil activate `clean-aindent-mode' which tries to correct
    ;; virtual indentation of simple modes. This can interfere with mode specific
@@ -596,22 +597,15 @@ configuration.
 It is mostly for variables that should be set before packages are loaded.
 If you are unsure, try setting them in `dotspacemacs/user-config' first."
 
-  (setq package-archives '(("gnu"    . "https://mirrors.tuna.tsinghua.edu.cn/elpa/gnu/")
-                           ("nongnu" . "https://mirrors.tuna.tsinghua.edu.cn/elpa/nongnu/")
-                           ("melpa"  . "https://mirrors.tuna.tsinghua.edu.cn/elpa/melpa/")))
-  (package-initialize) ;; You might already have this line
+(setq package-archives '(("gnu"    . "https://mirrors.tuna.tsinghua.edu.cn/elpa/gnu/")
+                         ("nongnu" . "https://mirrors.tuna.tsinghua.edu.cn/elpa/nongnu/")
+                         ("melpa"  . "https://mirrors.tuna.tsinghua.edu.cn/elpa/melpa/")))
 
-  (setq configuration-layer-elpa-archives
-        '(("melpa-cn" . "https://mirrors.tuna.tsinghua.edu.cn/elpa/melpa/")
-          ("org-cn"   . "https://mirrors.tuna.tsinghua.edu.cn/elpa/org/")
-          ("gnu-cn"   . "https://mirrors.tuna.tsinghua.edu.cn/elpa/gnu/")))
+(package-initialize) ;; You might already have this line
 
   ;; 解决 evil-collection 警告
   (setq evil-want-keybinding nil)
-
   )
-
-
 
 (defun dotspacemacs/user-config ()
   "Configuration for user code:
@@ -620,18 +614,113 @@ configuration.
 Put your configuration code here, except for variables that should be set
 before packages are loaded."
 
+
+
 ;; --- Org Mode 和 Org-roam 配置 ---
 ;; Org-roam 笔记的存储目录，通常是你的主 org-directory 的一个子目录。
 ;; 确保这个目录存在。
 (setq org-directory "~/org/")
 (setq org-roam-directory (file-truename "~/org/roam/"))
 
-(setq org-agenda-files (list "~/org/"
-                             "~/org/roam"
-                             "~/org/roam/daily"))
+;;按照时间一次打开多个日志文件
+(setq org-daily-reflection-dailies-directory "~/org/roam/daily")
+
+;;动态追踪agenda－files，完成的TODO自动排除
+;;* dynamic agenda https://github.com/brianmcgillion/doomd/blob/master/config.org
+  ;; https://d12frosted.io/posts/2021-01-16-task-management-with-roam-vol5.html
+  ;; The 'roam-agenda' tag is used to tell vulpea that there is a todo item in this file
+  (add-to-list 'org-tags-exclude-from-inheritance "roam-agenda")
+
+  (require 'vulpea)
+
+  (defun vulpea-buffer-p ()
+    "Return non-nil if the currently visited buffer is a note."
+    (and buffer-file-name
+         (string-prefix-p
+          (expand-file-name (file-name-as-directory org-roam-directory))
+          (file-name-directory buffer-file-name))))
+
+  (defun vulpea-project-p ()
+    "Return non-nil if current buffer has any todo entry.
+
+TODO entries marked as done are ignored, meaning the this
+function returns nil if current buffer contains only completed
+tasks."
+    (seq-find                                 ; (3)
+     (lambda (type)
+       (eq type 'todo))
+     (org-element-map                         ; (2)
+         (org-element-parse-buffer 'headline) ; (1)
+         'headline
+       (lambda (h)
+         (org-element-property :todo-type h)))))
+
+  (defun vulpea-project-update-tag (&optional arg)
+    "Update PROJECT tag in the current buffer."
+    (interactive "P")
+    (when (and (not (active-minibuffer-window))
+               (vulpea-buffer-p))
+      (save-excursion
+        (goto-char (point-min))
+        (let* ((tags (vulpea-buffer-tags-get))
+               (original-tags tags))
+          (if (vulpea-project-p)
+              (setq tags (cons "roam-agenda" tags))
+            (setq tags (remove "roam-agenda" tags)))
+
+          ;; cleanup duplicates
+          (setq tags (seq-uniq tags))
+
+          ;; update tags if changed
+          (when (or (seq-difference tags original-tags)
+                    (seq-difference original-tags tags))
+            (apply #'vulpea-buffer-tags-set tags))))))
+
+  ;; https://systemcrafters.net/build-a-second-brain-in-emacs/5-org-roam-hacks/
+  (defun my/org-roam-filter-by-tag (tag-name)
+    (lambda (node)
+      (member tag-name (org-roam-node-tags node))))
+
+  (defun my/org-roam-list-notes-by-tag (tag-name)
+    (mapcar #'org-roam-node-file
+            (seq-filter
+             (my/org-roam-filter-by-tag tag-name)
+             (org-roam-node-list))))
+
+  (defun dynamic-agenda-files-advice (orig-val)
+    (let ((roam-agenda-files (delete-dups (my/org-roam-list-notes-by-tag "roam-agenda"))))
+      (cl-union orig-val roam-agenda-files :test #'equal)))
+
+  (add-hook 'before-save-hook #'vulpea-project-update-tag)
+  (advice-add 'org-agenda-files :filter-return #'dynamic-agenda-files-advice)
+
+
+(setq org-roam-completion-everywhere t)
 
 (use-package websocket
   :after org-roam)
+
+(use-package org-roam-ui
+              :after org-roam ;; or :after org
+              ;;         normally we'd recommend hooking orui after org-roam, but since org-roam does not have
+              ;;         a hookable mode anymore, you're advised to pick something yourself
+              ;;         if you don't care about startup time, use
+              ;;  :hook (after-init . org-roam-ui-mode)
+              :config
+              (setq org-roam-ui-sync-theme t
+                    org-roam-ui-follow t
+                    org-roam-ui-update-on-save t
+                    org-roam-ui-open-on-start t))
+
+;; ---设置consult-ripgrep支持中文搜索，警告：仅在Windows下使用这些代码，linux不要乱用 ---
+(set-language-environment "UTF-8")
+;; (prefer-coding-system 'gbk)
+(add-to-list 'process-coding-system-alist
+             '("[rR][gG]" . (utf-8 . gbk-dos)))
+(setq-default buffer-file-coding-system 'utf-8-unix)
+(set-charset-priority 'unicode)
+(prefer-coding-system 'utf-8)
+(setq system-time-locale "C")
 
 ;; --- 配置pyim输入法 ---
 (require 'pyim)
@@ -682,47 +771,34 @@ before packages are loaded."
 (define-key pyim-mode-map "." 'pyim-page-next-page)
 (define-key pyim-mode-map "," 'pyim-page-previous-page)
 
-  ;; 确保 Pyim 在 Minibuffer 中显示时，候选词显示在下一行
-  (with-eval-after-load 'pyim-page
-    ;; 重新定义 minibuffer 样式下的格式化函数
-    (cl-defmethod pyim-page-info-format ((_style (eql minibuffer)) page-info)
-      "将 PAGE-INFO 格式化为选词框中显示的字符串，实现输入内容和候选词分行显示。
-       例如：
-       nihao
-       1.你好 2.你号 ... (1/9)
-      "
-      (let* ((preview-string (pyim-page-preview-create
-                              (plist-get page-info :scheme)))
-             (assistant-suffix (if (plist-get page-info :assistant-enable) " (辅)" ""))
-             (menu-string (pyim-page-menu-create
-                           (plist-get page-info :candidates)
-                           (plist-get page-info :position)
-                           nil
-                           (plist-get page-info :hightlight-current)))
-             (current-page (plist-get page-info :current-page))
-             (total-page (plist-get page-info :total-page)))
-        ;; 调整这里，将预览部分和候选词部分分开
-        (format "%s%s\n%s (%s/%s)"
-                preview-string
-                assistant-suffix
-                menu-string
-                current-page
-                total-page))))
+;; 确保 Pyim 在 Minibuffer 中显示时，候选词显示在下一行
+(with-eval-after-load 'pyim-page
+  ;; 重新定义 minibuffer 样式下的格式化函数
+  (cl-defmethod pyim-page-info-format ((_style (eql minibuffer)) page-info)
+    "将 PAGE-INFO 格式化为选词框中显示的字符串，实现输入内容和候选词分行显示。
+     例如：
+     nihao
+     1.你好 2.你号 ... (1/9)
+    "
+    (let* ((preview-string (pyim-page-preview-create
+                            (plist-get page-info :scheme)))
+           (assistant-suffix (if (plist-get page-info :assistant-enable) " (辅)" ""))
+           (menu-string (pyim-page-menu-create
+                         (plist-get page-info :candidates)
+                         (plist-get page-info :position)
+                         nil
+                         (plist-get page-info :hightlight-current)))
+           (current-page (plist-get page-info :current-page))
+           (total-page (plist-get page-info :total-page)))
+      ;; 调整这里，将预览部分和候选词部分分开
+      (format "%s%s\n%s (%s/%s)"
+              preview-string
+              assistant-suffix
+              menu-string
+              current-page
+              total-page))))
 
-(use-package fsrs
-  :defer t)
 
-(use-package org-srs
-  :hook (org-mode . org-srs-embed-overlay-mode)
-  :config
-  ;; 为 Org 模式绑定快捷键到 Spacemacs 的 SPC m (mode-specific) 前缀
-  ;; 这样更符合 Spacemacs 的按键哲学，避免与全局快捷键冲突
-  (evil-leader/set-key-for-mode 'org-mode
-    "me" 'org-srs-review-rate-easy   ;; SPC m e: 标记为“容易”
-    "mg" 'org-srs-review-rate-good   ;; SPC m g: 标记为“好”
-    "mh" 'org-srs-review-rate-hard   ;; SPC m h: 标记为“困难”
-    "ma" 'org-srs-review-rate-again) ;; SPC m a: 标记为“重来”
-    )
   )
 
 
@@ -740,26 +816,63 @@ This function is called at the very end of Spacemacs initialization."
  ;; If there is more than one, they won't work right.
  '(line-number-mode t)
  '(package-selected-packages
-   '(org-modern pyim ace-jump-helm-line ace-link aggressive-indent all-the-icons auto-compile auto-highlight-symbol auto-yasnippet browse-at-remote centered-cursor-mode clean-aindent-mode closql code-review column-enforce-mode company-quickhelp company-statistics define-word devdocs diff-hl diminish dired-quick-sort disable-mouse dotenv-mode drag-stuff dumb-jump edit-indirect elisp-def elisp-demos elisp-slime-nav emacsql emr eval-sexp-fu evil-anzu evil-args evil-cleverparens evil-collection evil-easymotion evil-escape evil-evilified-state evil-exchange evil-goggles evil-iedit-state evil-indent-plus evil-lion evil-lisp-state evil-matchit evil-mc evil-multiedit evil-nerd-commenter evil-numbers evil-org evil-surround evil-textobj-line evil-tutor evil-unimpaired evil-visual-mark-mode evil-visualstar expand-region eyebrowse fancy-battery flycheck-elsa flycheck-package flycheck-pos-tip gh-md git-link git-messenger git-modes git-timemachine gitignore-templates gnuplot golden-ratio google-translate helm-ag helm-c-yasnippet helm-comint helm-company helm-descbinds helm-git-grep helm-ls-git helm-make helm-mode-manager helm-org helm-org-rifle helm-projectile helm-purpose helm-swoop helm-themes helm-xref hide-comnt highlight-indentation highlight-numbers highlight-parentheses hl-todo holy-mode htmlize hungry-delete hybrid-mode indent-guide info+ inspector link-hint lorem-ipsum macrostep magit markdown-toc multi-line mwim nameless open-junk-file org-cliplink org-contrib org-download org-mime org-pomodoro org-present org-projectile org-rich-yank org-superstar orgit overseer page-break-lines paradox password-generator pcre2el popwin quickrun rainbow-delimiters restart-emacs smeargle space-doc spaceline spacemacs-purpose-popwin spacemacs-whitespace-cleanup string-edit-at-point string-inflection symbol-overlay symon term-cursor toc-org transient treemacs-evil treemacs-icons-dired treemacs-magit treemacs-persp treemacs-projectile undo-fu undo-fu-session unfill uuidgen vi-tilde-fringe volatile-highlights vundo wgrep winum with-editor writeroom-mode ws-butler yasnippet-snippets))
+   '(ace-jump-helm-line ace-link aggressive-indent all-the-icons auto-compile
+                        auto-highlight-symbol auto-yasnippet browse-at-remote
+                        centered-cursor-mode clean-aindent-mode closql
+                        code-review column-enforce-mode company-quickhelp
+                        company-statistics consult-notes consult-org-roam
+                        define-word devdocs diff-hl diminish dired-quick-sort
+                        disable-mouse dotenv-mode drag-stuff dumb-jump
+                        edit-indirect elisp-def elisp-demos elisp-slime-nav
+                        emacsql emr eval-sexp-fu evil-anzu evil-args
+                        evil-cleverparens evil-collection evil-easymotion
+                        evil-escape evil-evilified-state evil-exchange
+                        evil-goggles evil-iedit-state evil-indent-plus evil-lion
+                        evil-lisp-state evil-matchit evil-mc evil-multiedit
+                        evil-nerd-commenter evil-numbers evil-org evil-surround
+                        evil-textobj-line evil-tutor evil-unimpaired
+                        evil-visual-mark-mode evil-visualstar expand-region
+                        eyebrowse fancy-battery flycheck-elsa flycheck-package
+                        flycheck-pos-tip gh-md git-link git-messenger git-modes
+                        git-timemachine gitignore-templates gnuplot golden-ratio
+                        google-translate helm-ag helm-c-yasnippet helm-comint
+                        helm-company helm-descbinds helm-git-grep helm-ls-git
+                        helm-make helm-mode-manager helm-org helm-org-rifle
+                        helm-projectile helm-purpose helm-swoop helm-themes
+                        helm-xref hide-comnt highlight-indentation
+                        highlight-numbers highlight-parentheses hl-todo
+                        holy-mode htmlize hungry-delete hybrid-mode indent-guide
+                        info+ inspector link-hint lorem-ipsum macrostep magit
+                        markdown-toc multi-line mwim nameless open-junk-file
+                        org-agenda-files-track org-cliplink org-contrib
+                        org-download org-drill org-mime org-modern org-pomodoro
+                        org-present org-projectile org-ql org-rich-yank
+                        org-roam-ql org-super-agenda org-superstar orgit
+                        overseer page-break-lines paradox password-generator
+                        pcre2el popwin pyim quickrun rainbow-delimiters
+                        restart-emacs smeargle space-doc spaceline
+                        spacemacs-purpose-popwin spacemacs-whitespace-cleanup
+                        string-edit-at-point string-inflection symbol-overlay
+                        symon term-cursor toc-org transient treemacs-evil
+                        treemacs-icons-dired treemacs-magit treemacs-persp
+                        treemacs-projectile undo-fu undo-fu-session unfill
+                        uuidgen vi-tilde-fringe volatile-highlights vundo wgrep
+                        winum with-editor writeroom-mode ws-butler
+                        yasnippet-snippets))
  '(safe-local-variable-values
-   '((eval require 'magit-utils nil t)
-     (toc-org-max-depth . 2)
-     (org-hide-macro-markers . t)
-     (buffer-file-coding-system . utf-8-unix)
-     (eval auto-fill-mode t)
-     (eval require 'ox-texinfo+ nil t)
-     (eval require 'ol-info)
-     (org-src-preserve-indentation . t)
-     (org-src-preserve-indentation)
-     (eval require 'ol-man nil t)
-     (eval require 'magit-base nil t)
-     (eval require 'org-make-toc)
-     (eval when
-           (featurep 'toc-org)
-           (toc-org-mode))
-     (org-list-indent-offset . 1)
+   '((eval require 'magit-utils nil t) (toc-org-max-depth . 2)
+     (org-hide-macro-markers . t) (buffer-file-coding-system . utf-8-unix)
+     (eval auto-fill-mode t) (eval require 'ox-texinfo+ nil t)
+     (eval require 'ol-info) (org-src-preserve-indentation . t)
+     (org-src-preserve-indentation) (eval require 'ol-man nil t)
+     (eval require 'magit-base nil t) (eval require 'org-make-toc)
+     (eval when (featurep 'toc-org) (toc-org-mode)) (org-list-indent-offset . 1)
      (toc-org-max-depth . 4)))
- '(warning-suppress-log-types '((use-package))))
+ '(warning-suppress-log-types
+   '((package reinitialization) (package reinitialization)
+     (files missing-lexbind-cookie
+            "~/.emacs.d/elpa/pyim-greatdict-20170725.62510/pyim-greatdict.el")
+     (use-package))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
