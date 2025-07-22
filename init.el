@@ -608,65 +608,38 @@ If you are unsure, try setting them in `dotspacemacs/user-config' first."
   (setq evil-want-keybinding nil)
   )
 
+
 (defun dotspacemacs/user-config ()
-  "Configuration for user code:
-This function is called at the very end of Spacemacs startup, after layer
-configuration.
-Put your configuration code here, except for variables that should be set
-before packages are loaded."
+  "用户自定义配置函数。
+  此函数在 Spacemacs 启动的最后阶段，即层配置完成后调用。
+  在此处放置你的配置代码，但那些需要在包加载前设置的变量除外。"
 
-  ;; ------------------------------------------------------------------
-  ;;  基本 Emacs & Spacemacs 设置 (从 Doom 配置中借鉴)
-  ;; ------------------------------------------------------------------
+  ;;------------------------------------------------------------------
+  ;;  通用设置
+  ;;------------------------------------------------------------------
+  ;; 设置连续按下 'fd' 等同于 'ESC'，用于快速退出编辑模式。
+  (setq evil-escape-key-sequence "fd")
 
-  ;; 设置主题 (如果 Spacemacs 的主题层没有设置，或你想覆盖)
-  ;; 在 Spacemacs 中，主题通常通过 dotspacemacs-themes 变量在 init.el 中设置，
-  ;; 如果你在此处设置，会覆盖 Spacemacs 层级的主题。
-  ;; 如果你的 Spacemacs 已经配置了主题，可以考虑注释掉或删除此行。
-  ;; (setq doom-theme 'doom-one) ; Doom Emacs 的主题，在 Spacemacs 中可能需要相应主题包
+  ;; 全局启用视觉换行和单词换行，使文本在窗口边缘自动换行，并尽量保持单词完整。
+  (global-visual-line-mode 1)
+  (global-word-wrap-whitespace-mode 1)
 
-  ;; 显示行号 (Spacemacs 默认可能已开启，但此行可确保)
-  (setq display-line-numbers-type t)
-
-  ;; 符号字体与主字体保持一致
-  ;; 注意：Spacemacs 通常通过 layer 管理字体，此设置可能需要搭配你的 Spacemacs 字体层
-  ;; (setq doom-symbol-font doom-font) ;; 这里的 doom-font 变量在 Spacemacs 中可能未定义或有不同行为，谨慎使用
-
-  ;; 1. 设置 Emacs 启动时最大化窗口
-  ;; 推荐使用 initial-frame-alist，因为它只影响第一个启动的 Emacs 窗口
-  (add-to-list 'initial-frame-alist '(fullscreen . maximized))
-  ;; 如果你希望所有新创建的 frame 也最大化，可以使用 default-frame-alist
-  ;; 但通常 initial-frame-alist 已经足够
-  (add-to-list 'default-frame-alist '(fullscreen . maximized))
-
-  ;; 2. 启动时启用 big-font-mode (需确保 doom-big-font-mode 函数可用，Spacemacs 默认可能不提供此函数)
-  ;; 在 Spacemacs 中，这通常由 ui layer 提供，或者你需要自定义一个函数。
-  ;; 如果没有相应的 layer 或函数，此行会报错。
-  ;; 如果你希望在 Spacemacs 中实现类似功能，可以考虑使用 `text-scale-adjust` 或配置 Spacemacs 的字体层。
-  ;; 例如: (add-hook 'window-setup-hook (lambda () (text-scale-set 2)))
-  ;; 为了兼容性，我暂时注释掉 Doom 的特定函数，请根据你的 Spacemacs UI layer 调整。
-  ;; (add-hook 'window-setup-hook #'doom-big-font-mode)
-
-  ;; ------------------------------------------------------------------
-  ;;  Dired 配置
-  ;; ------------------------------------------------------------------
-  ;; 解决 dired-quick-sort 警告的配置
-  ;; 确保 ls-lisp 使用外部 ls 程序，而非 Emacs Lisp 实现
+  ;;------------------------------------------------------------------
+  ;;  Dired 文件管理器配置
+  ;;------------------------------------------------------------------
+  ;; 确保 Dired 使用外部的 `ls` 程序，以避免潜在的排序警告和兼容性问题。
   (setq ls-lisp-use-insert-directory-program t)
 
-  ;; ------------------------------------------------------------------
-  ;;  Org Mode 和 Org-roam 配置
-  ;; ------------------------------------------------------------------
-  ;; Org-roam 笔记的存储目录，通常是你的主 org-directory 的一个子目录。
-  ;; 确保这个目录存在。
-  ;; `org-directory` 必须在 org 包加载前设置，已在你原有配置中，此为重申
+  ;;------------------------------------------------------------------
+  ;;  Org Mode 与 Org-roam 配置
+  ;;------------------------------------------------------------------
+  ;; 指定 Org 文件的根目录和 Org-roam 笔记的存储目录。
+  ;; 注意：`org-directory` 通常应在 Org 包加载前设置，此处是重申。
   (setq org-directory "~/org/")
   (setq org-roam-directory (file-truename "~/org/roam/"))
   (setq org-daily-reflection-dailies-directory "~/org/roam/daily")
 
-
-  ;; --- 自动创建相关目录 (从 Doom 配置中借鉴) ---
-  ;; 如果这些目录不存在，就自动创建它们并给出提示
+  ;; 自动创建 Org 和 Org-roam 目录（如果不存在），并提示用户。
   (unless (file-directory-p org-directory)
     (make-directory org-directory t)
     (message "Org 目录 '%s' 已创建。" org-directory))
@@ -675,114 +648,13 @@ before packages are loaded."
     (make-directory org-roam-directory t)
     (message "Org-roam 目录 '%s' 已创建。" org-roam-directory))
 
+  ;; 确保 'roam-agenda' 标签不会被子标题继承，这是 Org Agenda 的重要设置。
+  (add-to-list 'org-tags-exclude-from-inheritance "roam-agenda")
 
-;; 动态追踪 agenda-files，完成/取消的TODO自动排除
-
-;; 确保 `roam-agenda` 标签不会被子标题继承，这是 Org Agenda 的一个重要设置
-(add-to-list 'org-tags-exclude-from-inheritance "roam-agenda")
-
-;; 使用 use-package 管理 vulpea 包及其相关配置
-(use-package vulpea
-  :config
-  ;; 辅助函数：判断当前 buffer 是否是 Org-roam 笔记
-  (defun vulpea-buffer-p ()
-    "Return non-nil if the currently visited buffer is a note."
-    ;; 检查文件是否已保存，并且位于 Org-roam 目录内
-    (and buffer-file-name
-         (string-prefix-p
-          (expand-file-name (file-name-as-directory org-roam-directory))
-          (file-name-directory buffer-file-name))))
-
-  ;; 改进版：判断当前 buffer 是否包含活跃的 TODO 或未来的时间戳
-  (defun vulpea-has-active-entry-p ()
-    "Return non-nil if current buffer has any todo entry OR an active timestamp.
-    'DONE'/'CANCELED' TODO entries and past timestamps are ignored."
-    (save-excursion
-      (goto-char (point-min)) ; 移到文件开头，开始解析
-      (let ((has-active-todo nil)        ; 标记是否有未完成/未取消的 TODO
-            (has-future-timestamp nil))  ; 标记是否有未来的截止/日程日期
-
-        ;; 遍历文件中的所有 Org 标题
-        (org-element-map (org-element-parse-buffer 'headline) 'headline
-          (lambda (headline)
-            (let* ((todo-type (org-element-property :todo-type headline))
-                   (todo-state (org-element-property :todo-keyword headline))
-                   (timestamps (org-element-property :timestamps headline)))
-
-              ;; 检查 TODO 状态：如果存在 TODO 类型，且当前状态不在 `org-done-keywords` 列表中（默认包含 DONE 和 CANCELED）
-              (when (and todo-type
-                         (not (member todo-state org-done-keywords)))
-                (setq has-active-todo t))
-
-              ;; 检查未来 DEADLINE 或 SCHEDULED 时间戳
-              (when timestamps
-                (dolist (ts timestamps)
-                  ;; 只关心 DEADLINE 和 SCHEDULED 类型的时间戳
-                  (when (member (org-element-property :type ts) '(deadline scheduled))
-                    (let* ((date-list (org-element-property :date ts))
-                           (time (when date-list (apply #'encode-time date-list)))
-                           ;; 判断时间戳是否在今天或未来
-                           (in-future (and time (time-less-p (current-time) (org-clear-time time)))))
-                      (when in-future
-                        (setq has-future-timestamp t)))))))))
-        ;; 如果有活跃的 TODO 或未来的时间戳，则返回 T
-        (or has-active-todo has-future-timestamp))))
-
-  ;; 更新笔记文件标签的函数
-  (defun vulpea-project-update-tag (&optional arg)
-    "Update 'roam-agenda' tag in the current buffer based on active entries.
-    Adds 'roam-agenda' if active TODOs/future timestamps exist, removes otherwise."
-    (interactive "P")
-    ;; 仅在非 minibuffer 窗口中的 Org-roam 笔记中执行此操作
-    (when (and (not (active-minibuffer-window))
-               (vulpea-buffer-p))
-      (save-excursion
-        (goto-char (point-min)) ; 移动到文件开头以读取标签
-        (let* ((tags (vulpea-buffer-tags-get)) ; 获取当前文件的标签列表
-               (original-tags tags))           ; 备份原始标签以便比较
-
-          ;; 根据是否有活跃条目来决定是否应包含 "roam-agenda" 标签
-          (if (vulpea-has-active-entry-p)
-              (setq tags (cons "roam-agenda" tags)) ; 添加 "roam-agenda"
-            (setq tags (remove "roam-agenda" tags))) ; 移除 "roam-agenda"
-
-          (setq tags (seq-uniq tags)) ; 清理重复的标签
-
-          ;; 如果标签有变化，则更新文件的 `#+filetags:` 属性
-          (when (or (seq-difference tags original-tags)
-                    (seq-difference original-tags tags))
-            (apply #'vulpea-buffer-tags-set tags))))))
-
-  ;; 钩子：在保存 Org 文件前自动调用 `vulpea-project-update-tag` 来更新标签
-  (add-hook 'before-save-hook #'vulpea-project-update-tag))
-
-;; Org-roam 动态 agenda 辅助函数：用于从 Org-roam 数据库中获取文件
-(defun my/org-roam-filter-by-tag (tag-name)
-  "Return a lambda function to filter Org-roam nodes by TAG-NAME."
-  (lambda (node)
-    (member tag-name (org-roam-node-tags node))))
-
-(defun my/org-roam-list-notes-by-tag (tag-name)
-  "List files of Org-roam notes that have TAG-NAME."
-  ;; 这里不强制 `org-roam-db-sync` 以避免性能问题。
-  ;; 标签更新通常在文件保存时（通过 `before-save-hook` 和 Spacemacs 的 org-roam 层）触发 DB 同步。
-  (mapcar #'org-roam-node-file
-          (seq-filter (my/org-roam-filter-by-tag tag-name)
-                      (org-roam-node-list))))
-
-;; 过滤 `org-agenda-files` 的 advice：将带有 `roam-agenda` 标签的文件添加到 Agenda 列表
-(defun dynamic-agenda-files-advice (orig-val)
-  "Advice to dynamically add Org-roam notes with 'roam-agenda' tag to `org-agenda-files`."
-  (let ((roam-agenda-files (delete-dups (my/org-roam-list-notes-by-tag "roam-agenda"))))
-    ;; 合并原始的 agenda-files 和动态生成的 roam-agenda-files，并去除重复项
-    (cl-union orig-val roam-agenda-files :test #'equal)))
-
-;; 钩子和 advice：将动态文件列表注入 `org-agenda-files` 的关键步骤
-(advice-add 'org-agenda-files :filter-return #'dynamic-agenda-files-advice)
-
-  ;; Org-roam UI 配置 (你的原有配置)
+  ;; Org-roam UI 配置
+  ;; 启用 Org-roam UI 的相关功能，如全局补全、主题同步、跟随当前笔记等。
   (setq org-roam-completion-everywhere t)
-  (use-package websocket :after org-roam)
+  (use-package websocket :after org-roam) ; Org-roam UI 的依赖
   (use-package org-roam-ui
     :after org-roam
     :config
@@ -791,60 +663,142 @@ before packages are loaded."
           org-roam-ui-update-on-save t
           org-roam-ui-open-on-start t))
 
-  ;; Org-ql 搜索目录递归 (从 Doom 配置中借鉴)
+  ;; Org-ql 搜索配置：确保搜索目录递归。
   (setq org-ql-search-directories-files-recursive t)
 
-  ;; Org-drill 修复 (从 Doom 配置中借鉴)
+  ;; Org-drill 修复：调整时间戳格式，确保与 Org-mode 兼容。
   (with-eval-after-load 'org-drill
     (defun org-drill-time-to-inactive-org-timestamp (time)
-      "Convert TIME into org-mode timestamp."
-      ;; 确保这里使用的格式与当前 org-mode 的期望一致
-      ;; 注意：这可能需要根据你的 Org-mode 版本进行调整
+      "将 TIME 转换为 Org-mode 时间戳格式。"
       (format-time-string (concat "[" (cdr org-time-stamp-formats) "]") time)))
 
-  ;; ------------------------------------------------------------------
-  ;;  编码设置 (保留你原有的有效配置)
-  ;; ------------------------------------------------------------------
-  ;; ---设置consult-ripgrep支持中文搜索，警告：仅在Windows下使用这些代码，linux不要乱用 ---
+  ;; --- Vulpea 包及其动态 Agenda 配置 ---
+  ;; 使用 `use-package` 管理 Vulpea，并配置其核心功能。
+  (use-package vulpea
+    :config
+    ;; 辅助函数：判断当前 buffer 是否为 Org-roam 笔记。
+    (defun vulpea-buffer-p ()
+      "如果当前访问的 buffer 是 Org-roam 笔记，则返回非 nil。"
+      (and buffer-file-name
+           (string-prefix-p
+            (expand-file-name (file-name-as-directory org-roam-directory))
+            (file-name-directory buffer-file-name))))
+
+    ;; 改进版函数：判断当前 buffer 是否包含活跃的 TODO 或未来的时间戳。
+    ;; 忽略已完成/取消的 TODO 和过去的时间戳。
+    (defun vulpea-has-active-entry-p ()
+      "如果当前 buffer 包含任何未完成的 TODO 或未来的时间戳，则返回非 nil。"
+      (save-excursion
+        (goto-char (point-min))
+        (let ((has-active-todo nil)
+              (has-future-timestamp nil))
+          (org-element-map (org-element-parse-buffer 'headline) 'headline
+            (lambda (headline)
+              (let* ((todo-type (org-element-property :todo-type headline))
+                     (todo-state (org-element-property :todo-keyword headline))
+                     (timestamps (org-element-property :timestamps headline)))
+                ;; 检查活跃的 TODO 状态
+                (when (and todo-type
+                           (not (member todo-state org-done-keywords)))
+                  (setq has-active-todo t))
+                ;; 检查未来 DEADLINE 或 SCHEDULED 时间戳
+                (when timestamps
+                  (dolist (ts timestamps)
+                    (when (member (org-element-property :type ts) '(deadline scheduled))
+                      (let* ((date-list (org-element-property :date ts))
+                             (time (when date-list (apply #'encode-time date-list)))
+                             (in-future (and time (time-less-p (current-time) (org-clear-time time)))))
+                        (when in-future
+                          (setq has-future-timestamp t)))))))))
+          (or has-active-todo has-future-timestamp))))
+
+    ;; 更新笔记文件标签的函数：根据活跃条目添加或移除 'roam-agenda' 标签。
+    (defun vulpea-project-update-tag (&optional arg)
+      "根据当前 buffer 是否包含活跃条目，更新 'roam-agenda' 标签。"
+      (interactive "P")
+      (when (and (not (active-minibuffer-window))
+                 (vulpea-buffer-p))
+        (save-excursion
+          (goto-char (point-min))
+          (let* ((tags (vulpea-buffer-tags-get))
+                 (original-tags tags))
+            (if (vulpea-has-active-entry-p)
+                (setq tags (cons "roam-agenda" tags))
+              (setq tags (remove "roam-agenda" tags)))
+            (setq tags (seq-uniq tags))
+            ;; 如果标签有变化，则更新文件的 `#+filetags:` 属性
+            (when (or (seq-difference tags original-tags)
+                      (seq-difference original-tags tags))
+              (apply #'vulpea-buffer-tags-set tags))))))
+
+    ;; 钩子：在保存 Org 文件前自动调用 `vulpea-project-update-tag` 更新标签。
+    (add-hook 'before-save-hook #'vulpea-project-update-tag))
+
+  ;; Org-roam 动态 agenda 辅助函数：用于从 Org-roam 数据库中获取文件。
+  (defun my/org-roam-filter-by-tag (tag-name)
+    "返回一个 lambda 函数，用于通过 TAG-NAME 过滤 Org-roam 节点。"
+    (lambda (node)
+      (member tag-name (org-roam-node-tags node))))
+
+  (defun my/org-roam-list-notes-by-tag (tag-name)
+    "列出带有 TAG-NAME 的 Org-roam 笔记文件。"
+    (mapcar #'org-roam-node-file
+            (seq-filter (my/org-roam-filter-by-tag tag-name)
+                        (org-roam-node-list))))
+
+  ;; 过滤 `org-agenda-files` 的 advice：将带有 `roam-agenda` 标签的文件添加到 Agenda 列表。
+  (defun dynamic-agenda-files-advice (orig-val)
+    "动态添加带有 'roam-agenda' 标签的 Org-roam 笔记到 `org-agenda-files`。"
+    (let ((roam-agenda-files (delete-dups (my/org-roam-list-notes-by-tag "roam-agenda"))))
+      (cl-union orig-val roam-agenda-files :test #'equal)))
+
+  ;; 钩子和 advice：将动态文件列表注入 `org-agenda-files` 的关键步骤。
+  (advice-add 'org-agenda-files :filter-return #'dynamic-agenda-files-advice)
+
+  ;;------------------------------------------------------------------
+  ;;  编码设置 (尤其适用于 Windows 环境)
+  ;;------------------------------------------------------------------
+  ;; 设置语言环境为 UTF-8。
   (set-language-environment "UTF-8")
-  ;; (prefer-coding-system 'gbk)
+  ;; 将 ripgrep 进程的编码设置为 UTF-8 输入和 GBK-DOS 输出，用于解决 Windows 下中文搜索乱码。
   (add-to-list 'process-coding-system-alist
                '("[rR][gG]" . (utf-8 . gbk-dos)))
+  ;; 默认文件编码为 UTF-8 (Unix 风格换行符)。
   (setq-default buffer-file-coding-system 'utf-8-unix)
+  ;; 优先使用 Unicode 字符集。
   (set-charset-priority 'unicode)
+  ;; 优先使用 UTF-8 编码系统。
   (prefer-coding-system 'utf-8)
+  ;; 设置系统时间区域为 "C" (通用语言环境)，避免某些中文显示问题。
   (setq system-time-locale "C")
 
-  ;; --- 解决 find note 出现文件名乱码的问题 (从 Doom 配置中借鉴) ---
-  ;; 这段代码通过 advice-add 修改了 projectile 的内部函数，强制其以 UTF-8 解码外部命令的输出。
-  ;; 对于 Windows 下的乱码问题，这是一个非常好的解决方案。
+  ;; 解决 `find note` (Projectile) 出现文件名乱码的问题。
+  ;; 通过 advice 强制 Projectile 以 UTF-8 解码外部命令的输出。
   (defun projectile-files-via-ext-command@decode-utf-8 (root command)
-    "Advice override `projectile-files-via-ext-command' to decode shell output."
+    "Override `projectile-files-via-ext-command' 以 UTF-8 解码 shell 输出。"
     (when (stringp command)
       (let ((default-directory root))
         (with-temp-buffer
           (shell-command command t "*projectile-files-errors*")
-          (decode-coding-region (point-min) (point-max) 'utf-8) ;; ++ 关键的解码行
+          (decode-coding-region (point-min) (point-max) 'utf-8) ;; 关键的解码行
           (let ((shell-output (buffer-substring (point-min) (point-max))))
             (split-string (string-trim shell-output) "\0" t))))))
 
   (advice-add 'projectile-files-via-ext-command
               :override 'projectile-files-via-ext-command@decode-utf-8)
 
-  ;; ------------------------------------------------------------------
-  ;;  Deft 配置 (从 Doom 配置中借鉴并优化)
-  ;; ------------------------------------------------------------------
+  ;;------------------------------------------------------------------
+  ;;  Deft 笔记管理配置
+  ;;------------------------------------------------------------------
+  ;; Deft 笔记目录和文件类型设置。
   (setq deft-directory "~/org/")
-  (setq deft-recursive t)
-  (setq deft-extensions '("txt" "md" "org"))
-  (setq deft-parse-org t) ;; 如果你的 Org 文件包含 Org-mode 语法，启用解析
+  (setq deft-recursive t)      ; 递归扫描子目录
+  (setq deft-extensions '("txt" "md" "org")) ; 支持的文件扩展名
+  (setq deft-parse-org t)      ; 启用 Org 文件解析
 
-  ;; 优化 deft 搜索结果显示为 title 而不是 property
+  ;; 优化 Deft 搜索结果显示：优先使用 Org 文件的 #+TITLE: 作为标题。
   (defun cm/deft-parse-title (file contents)
-    "Parse the given FILE and CONTENTS and determine the title.
-    If `deft-use-filename-as-title' is nil, the title is taken to
-    be the first non-empty line of the FILE. Else the base name of the FILE is
-    used as title."
+    "解析 FILE 和 CONTENTS，确定笔记标题。优先使用 #+TITLE:，否则使用文件名。"
     (let ((begin (string-match "^#\\+[tT][iI][tT][lL][eE]: .*$" contents)))
       (if begin
           (string-trim (substring contents begin (match-end 0)) "#\\+[tT][iI][tT][lL][eE]: *" "[\n\t ]+")
@@ -852,116 +806,96 @@ before packages are loaded."
 
   (advice-add 'deft-parse-title :override #'cm/deft-parse-title)
 
+  ;; 配置 Deft 摘要排除的正则表达式，以更好地显示笔记内容。
   (setq deft-strip-summary-regexp
         (concat "\\("
-                "[\n\t]" ;; blank
-                "\\|^#\\+[[:alpha:]_]+:.*$" ;; org-mode metadata
-                "\\|^:PROPERTIES:\n\\(.+\n\\)+:END:\n"
+                "[\n\t]" ;; 空行或制表符
+                "\\|^#\\+[[:alpha:]_]+:.*$" ;; Org-mode 元数据
+                "\\|^:PROPERTIES:\n\\(.+\n\\)+:END:\n" ;; Org-mode PROPERTIES 抽屉
                 "\\)"))
 
-  ;; ------------------------------------------------------------------
+  ;;------------------------------------------------------------------
   ;;  输入法 (PyIM) 配置
-  ;; ------------------------------------------------------------------
+  ;;------------------------------------------------------------------
   (use-package pyim
     :init
-    ;; 确保 PyIM 在需要时加载并激活默认输入法
+    ;; 确保 PyIM 在需要时加载并激活为默认输入法。
     (setq default-input-method "pyim")
     :config
+    ;; 加载 PyIM 相关模块。
     (require 'pyim-greatdict)
     (require 'pyim-cregexp-utils)
     (require 'pyim-cstring-utils)
 
-    ;; 设置默认的 PyIM 方案
+    ;; 设置默认的 PyIM 方案为微软双拼。
     (pyim-default-scheme 'microsoft-shuangpin)
 
-    ;; 启用基础词库
+    ;; 启用基础词库和大词库。
     (pyim-basedict-enable)
-    ;; 启用大词库
     (pyim-greatdict-enable)
 
-    ;; **仅启用百度云词库，谷歌云词库保持注释状态**
+    ;; 仅启用百度云词库，谷歌云词库保持注释状态。
     (setq pyim-cloudim 'baidu)
     ;;(setq pyim-cloudim 'google) ;; 谷歌云词库已注释
 
-    ;; 启用词库缓存
+    ;; 启用词库缓存。
     (require 'pyim-dregcache)
     (setq pyim-dcache-backend 'pyim-dregcache)
 
-    ;; 移除或注释掉这个 `emacs-startup-hook`，
-    ;; PyIM 会在 `default-input-method` 设置后自动处理词库加载。
-    ;; (add-hook 'emacs-startup-hook
-    ;;           (lambda () (pyim-restart-1 t)))
-
-    ;; --- Evil Insert 模式下的 Leader 键绑定 ---
-    ;; 确保在 Evil Insert 模式下，SPC o j 也能切换输入法
-    ;; (等同于按下 M-m o j)
+    ;; 在 Evil Insert 模式下绑定 'SPC o j' 键以切换输入法。
     (with-eval-after-load 'evil-maps
       (define-key evil-insert-state-map (kbd "M-m o j") #'toggle-input-method))
 
-    ;; use posframe
+    ;; 使用 posframe 显示候选词界面，提升视觉效果。
     (require 'posframe)
     (setq pyim-page-tooltip 'posframe)
 
-    ;;取消模糊音
+    ;; 取消模糊音功能。
     (setq pyim-pinyin-fuzzy-alist nil)
 
-    ;; 开启代码搜索中文功能（比如拼音，五笔码等）
+    ;; 启用代码搜索中的中文支持（如拼音、五笔码等）。
     (pyim-isearch-mode 1))
 
-  ;; 让 vertico, selectrum 等补全框架，通过 orderless 支持拼音搜索候选项功能
+  ;; 让 Vertico, Selectrum 等补全框架通过 Orderless 支持拼音搜索候选项。
   (use-package orderless
     :config
     (defun my-orderless-regexp (orig-func component)
+      "将 Orderless 的正则组件转换为 PyIM 可理解的正则。"
       (let ((result (funcall orig-func component)))
         (pyim-cregexp-build result)))
     (advice-add 'orderless-regexp :around #'my-orderless-regexp))
 
-  ;; PyIM 翻页和 Minibuffer 样式 (你的原有配置，已优化)
+  ;; PyIM 翻页和 Minibuffer 显示样式优化。
   (with-eval-after-load 'pyim-page
-    ;; 使用其它字符翻页
+    ;; 使用 '.' 和 ',' 键进行翻页。
     (define-key pyim-mode-map "." 'pyim-page-next-page)
     (define-key pyim-mode-map "," 'pyim-page-previous-page)
 
-    ;; 确保 Pyim 在 Minibuffer 中显示时，候选词显示在下一行 (你的原有配置)
-    ;; 定义一个建议函数，用于修改 pyim-page-info-format 的行为
+    ;; 确保 PyIM 在 Minibuffer 中显示时，候选词显示在下一行。
     (defun my-pyim-page-info-format-minibuffer-advice (original-function style page-info)
-      ;; 如果当前样式是 minibuffer (Minibuffer显示模式)
+      "修改 `pyim-page-info-format`，使 Minibuffer 中的候选词分行显示。"
       (if (eq style 'minibuffer)
-          ;; 使用自定义的格式字符串：拼音在第一行，候选词在第二行
-          (format "%s%s:\n%s(%s/%s)" ; 注意这里的 \n (换行符)
-                  ;; 生成拼音预览字符串
+          ;; 自定义格式：拼音在第一行，候选词在第二行
+          (format "%s%s:\n%s(%s/%s)"
                   (pyim-page-preview-create
                    (plist-get page-info :scheme))
-                  ;; 辅助输入法提示 (如果有)
                   (if (plist-get page-info :assistant-enable) " (辅)" "")
-                  ;; 生成候选词列表字符串
                   (pyim-page-menu-create
                    (plist-get page-info :candidates)
                    (plist-get page-info :position)
-                   nil ; 没有行分隔符
+                   nil
                    (plist-get page-info :hightlight-current))
-                  ;; 当前页码
                   (plist-get page-info :current-page)
-                  ;; 总页数
                   (plist-get page-info :total-page))
-        ;; 如果是其他显示样式，则调用原始的 pyim-page-info-format 函数
+        ;; 其他样式则调用原始函数
         (funcall original-function style page-info)))
 
-    ;; 将我们的建议函数添加到 pyim-page-info-format 函数上
+    ;; 将自定义的 advice 添加到 `pyim-page-info-format` 函数上。
     (advice-add 'pyim-page-info-format :around #'my-pyim-page-info-format-minibuffer-advice)
 
-    ;; 可选：如果两行显示后 Minibuffer 高度不够，可以尝试增加 Minibuffer 的最大高度
+    ;; 可选：如果两行显示后 Minibuffer 高度不够，可以尝试增加 Minibuffer 的最大高度。
     ;; (setq max-mini-window-height 5) ; 根据需要调整此值
     )
-
-  ;; ------------------------------------------------------------------
-  ;;  其他全局配置
-  ;; ------------------------------------------------------------------
-  ;; 设置连续按fd等于ESC (从 Doom 配置中借鉴)
-  (setq evil-escape-key-sequence "fd")
-
-  ;; 启用 word-wrap-whitespace-mode (你的原有配置)
-  (global-word-wrap-whitespace-mode 1)
 )
 
 ;; Do not write anything past this comment. This is where Emacs will
