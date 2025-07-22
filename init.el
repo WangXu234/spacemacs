@@ -101,6 +101,7 @@ This function should only modify configuration layer settings."
                                       (pyim-greatdict :location (recipe :fetcher github :repo "tumashu/pyim-greatdict")) ; Large dictionary
                                       org-daily-reflection
                                       org-drill
+                                      deft
 vulpea
    )
 
@@ -675,63 +676,109 @@ before packages are loaded."
     (message "Org-roam 目录 '%s' 已创建。" org-roam-directory))
 
 
-  ;; 动态追踪 agenda-files，完成的TODO自动排除
-  (add-to-list 'org-tags-exclude-from-inheritance "roam-agenda")
+;; 动态追踪 agenda-files，完成/取消的TODO自动排除
 
-  ;; 使用 use-package 管理 vulpea (你的原有配置，已优化)
-  (use-package vulpea
-    :config
-    (defun vulpea-buffer-p ()
-      "Return non-nil if the currently visited buffer is a note."
-      (and buffer-file-name
-           (string-prefix-p
-            (expand-file-name (file-name-as-directory org-roam-directory))
-            (file-name-directory buffer-file-name))))
+;; 确保 `roam-agenda` 标签不会被子标题继承，这是 Org Agenda 的一个重要设置
+(add-to-list 'org-tags-exclude-from-inheritance "roam-agenda")
 
-    (defun vulpea-project-p ()
-      "Return non-nil if current buffer has any todo entry.
-      TODO entries marked as done are ignored, meaning the this
-      function returns nil if current buffer contains only completed tasks."
-      (seq-find
-       (lambda (type) (eq type 'todo))
-       (org-element-map (org-element-parse-buffer 'headline)
-                        'headline
-                        (lambda (h) (org-element-property :todo-type h)))))
+;; 使用 use-package 管理 vulpea 包及其相关配置
+(use-package vulpea
+  :config
+  ;; 辅助函数：判断当前 buffer 是否是 Org-roam 笔记
+  (defun vulpea-buffer-p ()
+    "Return non-nil if the currently visited buffer is a note."
+    ;; 检查文件是否已保存，并且位于 Org-roam 目录内
+    (and buffer-file-name
+         (string-prefix-p
+          (expand-file-name (file-name-as-directory org-roam-directory))
+          (file-name-directory buffer-file-name))))
 
-    (defun vulpea-project-update-tag (&optional arg)
-      "Update PROJECT tag in the current buffer."
-      (interactive "P")
-      (when (and (not (active-minibuffer-window))
-                 (vulpea-buffer-p))
-        (save-excursion
-          (goto-char (point-min))
-          (let* ((tags (vulpea-buffer-tags-get))
-                 (original-tags tags))
-            (if (vulpea-project-p)
-                (setq tags (cons "roam-agenda" tags))
-              (setq tags (remove "roam-agenda" tags)))
-            (setq tags (seq-uniq tags)) ; cleanup duplicates
-            (when (or (seq-difference tags original-tags)
-                      (seq-difference original-tags tags))
-              (apply #'vulpea-buffer-tags-set tags)))))))
+  ;; 改进版：判断当前 buffer 是否包含活跃的 TODO 或未来的时间戳
+  (defun vulpea-has-active-entry-p ()
+    "Return non-nil if current buffer has any todo entry OR an active timestamp.
+    'DONE'/'CANCELED' TODO entries and past timestamps are ignored."
+    (save-excursion
+      (goto-char (point-min)) ; 移到文件开头，开始解析
+      (let ((has-active-todo nil)        ; 标记是否有未完成/未取消的 TODO
+            (has-future-timestamp nil))  ; 标记是否有未来的截止/日程日期
 
-  ;; Org-roam 动态 agenda 辅助函数 (你的原有配置)
-  (defun my/org-roam-filter-by-tag (tag-name)
-    (lambda (node)
-      (member tag-name (org-roam-node-tags node))))
+        ;; 遍历文件中的所有 Org 标题
+        (org-element-map (org-element-parse-buffer 'headline) 'headline
+          (lambda (headline)
+            (let* ((todo-type (org-element-property :todo-type headline))
+                   (todo-state (org-element-property :todo-keyword headline))
+                   (timestamps (org-element-property :timestamps headline)))
 
-  (defun my/org-roam-list-notes-by-tag (tag-name)
-    (mapcar #'org-roam-node-file
-            (seq-filter (my/org-roam-filter-by-tag tag-name)
-                        (org-roam-node-list))))
+              ;; 检查 TODO 状态：如果存在 TODO 类型，且当前状态不在 `org-done-keywords` 列表中（默认包含 DONE 和 CANCELED）
+              (when (and todo-type
+                         (not (member todo-state org-done-keywords)))
+                (setq has-active-todo t))
 
-  (defun dynamic-agenda-files-advice (orig-val)
-    (let ((roam-agenda-files (delete-dups (my/org-roam-list-notes-by-tag "roam-agenda"))))
-      (cl-union orig-val roam-agenda-files :test #'equal)))
+              ;; 检查未来 DEADLINE 或 SCHEDULED 时间戳
+              (when timestamps
+                (dolist (ts timestamps)
+                  ;; 只关心 DEADLINE 和 SCHEDULED 类型的时间戳
+                  (when (member (org-element-property :type ts) '(deadline scheduled))
+                    (let* ((date-list (org-element-property :date ts))
+                           (time (when date-list (apply #'encode-time date-list)))
+                           ;; 判断时间戳是否在今天或未来
+                           (in-future (and time (time-less-p (current-time) (org-clear-time time)))))
+                      (when in-future
+                        (setq has-future-timestamp t)))))))))
+        ;; 如果有活跃的 TODO 或未来的时间戳，则返回 T
+        (or has-active-todo has-future-timestamp))))
 
-  ;; 钩子和 advice
-  (add-hook 'before-save-hook #'vulpea-project-update-tag)
-  (advice-add 'org-agenda-files :filter-return #'dynamic-agenda-files-advice)
+  ;; 更新笔记文件标签的函数
+  (defun vulpea-project-update-tag (&optional arg)
+    "Update 'roam-agenda' tag in the current buffer based on active entries.
+    Adds 'roam-agenda' if active TODOs/future timestamps exist, removes otherwise."
+    (interactive "P")
+    ;; 仅在非 minibuffer 窗口中的 Org-roam 笔记中执行此操作
+    (when (and (not (active-minibuffer-window))
+               (vulpea-buffer-p))
+      (save-excursion
+        (goto-char (point-min)) ; 移动到文件开头以读取标签
+        (let* ((tags (vulpea-buffer-tags-get)) ; 获取当前文件的标签列表
+               (original-tags tags))           ; 备份原始标签以便比较
+
+          ;; 根据是否有活跃条目来决定是否应包含 "roam-agenda" 标签
+          (if (vulpea-has-active-entry-p)
+              (setq tags (cons "roam-agenda" tags)) ; 添加 "roam-agenda"
+            (setq tags (remove "roam-agenda" tags))) ; 移除 "roam-agenda"
+
+          (setq tags (seq-uniq tags)) ; 清理重复的标签
+
+          ;; 如果标签有变化，则更新文件的 `#+filetags:` 属性
+          (when (or (seq-difference tags original-tags)
+                    (seq-difference original-tags tags))
+            (apply #'vulpea-buffer-tags-set tags))))))
+
+  ;; 钩子：在保存 Org 文件前自动调用 `vulpea-project-update-tag` 来更新标签
+  (add-hook 'before-save-hook #'vulpea-project-update-tag))
+
+;; Org-roam 动态 agenda 辅助函数：用于从 Org-roam 数据库中获取文件
+(defun my/org-roam-filter-by-tag (tag-name)
+  "Return a lambda function to filter Org-roam nodes by TAG-NAME."
+  (lambda (node)
+    (member tag-name (org-roam-node-tags node))))
+
+(defun my/org-roam-list-notes-by-tag (tag-name)
+  "List files of Org-roam notes that have TAG-NAME."
+  ;; 这里不强制 `org-roam-db-sync` 以避免性能问题。
+  ;; 标签更新通常在文件保存时（通过 `before-save-hook` 和 Spacemacs 的 org-roam 层）触发 DB 同步。
+  (mapcar #'org-roam-node-file
+          (seq-filter (my/org-roam-filter-by-tag tag-name)
+                      (org-roam-node-list))))
+
+;; 过滤 `org-agenda-files` 的 advice：将带有 `roam-agenda` 标签的文件添加到 Agenda 列表
+(defun dynamic-agenda-files-advice (orig-val)
+  "Advice to dynamically add Org-roam notes with 'roam-agenda' tag to `org-agenda-files`."
+  (let ((roam-agenda-files (delete-dups (my/org-roam-list-notes-by-tag "roam-agenda"))))
+    ;; 合并原始的 agenda-files 和动态生成的 roam-agenda-files，并去除重复项
+    (cl-union orig-val roam-agenda-files :test #'equal)))
+
+;; 钩子和 advice：将动态文件列表注入 `org-agenda-files` 的关键步骤
+(advice-add 'org-agenda-files :filter-return #'dynamic-agenda-files-advice)
 
   ;; Org-roam UI 配置 (你的原有配置)
   (setq org-roam-completion-everywhere t)
@@ -743,13 +790,6 @@ before packages are loaded."
           org-roam-ui-follow t
           org-roam-ui-update-on-save t
           org-roam-ui-open-on-start t))
-
-  ;; 精简 Org-roam node find 搜索结果显示 (从 Doom 配置中借鉴)
-  (with-eval-after-load 'org-roam
-    ;; Sets the display template for Org-roam nodes in completion interfaces.
-    ;; Displays the node's type, followed by its tags, then its hierarchy.
-    (setq org-roam-node-display-template "${title} ${doom-tags:42} ${doom-hierarchy:*}"))
-
 
   ;; Org-ql 搜索目录递归 (从 Doom 配置中借鉴)
   (setq org-ql-search-directories-files-recursive t)
@@ -852,8 +892,11 @@ before packages are loaded."
     ;; (add-hook 'emacs-startup-hook
     ;;           (lambda () (pyim-restart-1 t)))
 
-    ;; 输入法内切换中英文输入
-    (global-set-key (kbd "C-c i") 'pyim-toggle-input-ascii)
+    ;; --- Evil Insert 模式下的 Leader 键绑定 ---
+    ;; 确保在 Evil Insert 模式下，SPC o j 也能切换输入法
+    ;; (等同于按下 M-m o j)
+    (with-eval-after-load 'evil-maps
+      (define-key evil-insert-state-map (kbd "M-m o j") #'toggle-input-method))
 
     ;; use posframe
     (require 'posframe)
