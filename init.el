@@ -601,11 +601,20 @@ If you are unsure, try setting them in `dotspacemacs/user-config' first."
 (setq package-archives '(("gnu"    . "https://mirrors.tuna.tsinghua.edu.cn/elpa/gnu/")
                          ("nongnu" . "https://mirrors.tuna.tsinghua.edu.cn/elpa/nongnu/")
                          ("melpa"  . "https://mirrors.tuna.tsinghua.edu.cn/elpa/melpa/")))
-
 (package-initialize) ;; You might already have this line
 
-  ;; 解决 evil-collection 警告
-  (setq evil-want-keybinding nil)
+(setq evil-want-keybinding nil)
+
+  ;; remove startup auto-evilification messages:
+  (with-eval-after-load 'org-agenda
+    (dolist (key '("f" "C-n" "G" "\\" "|")) (define-key org-agenda-mode-map (kbd key) nil))
+    (evil-define-key 'evilified org-agenda-mode-map (kbd "fc") #'org-agenda-filter-by-category)
+    (evil-define-key 'evilified org-agenda-mode-map (kbd "fd") #'org-agenda-filter-remove-all)
+    (evil-define-key 'evilified org-agenda-mode-map (kbd "fe") #'org-agenda-filter-by-effort)
+    (evil-define-key 'evilified org-agenda-mode-map (kbd "fh") #'org-agenda-filter-by-top-headline)
+    (evil-define-key 'evilified org-agenda-mode-map (kbd "ft") #'org-agenda-filter-by-tag)
+    (evil-define-key 'evilified org-agenda-mode-map (kbd "fx") #'org-agenda-filter-by-regexp)
+    )
   )
 
 
@@ -623,12 +632,6 @@ If you are unsure, try setting them in `dotspacemacs/user-config' first."
   ;; 全局启用视觉换行和单词换行，使文本在窗口边缘自动换行，并尽量保持单词完整。
   (global-visual-line-mode 1)
   (global-word-wrap-whitespace-mode 1)
-
-  ;;------------------------------------------------------------------
-  ;;  Dired 文件管理器配置
-  ;;------------------------------------------------------------------
-  ;; 确保 Dired 使用外部的 `ls` 程序，以避免潜在的排序警告和兼容性问题。
-  (setq ls-lisp-use-insert-directory-program t)
 
   ;;------------------------------------------------------------------
   ;;  Org Mode 与 Org-roam 配置
