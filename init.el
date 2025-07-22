@@ -614,193 +614,312 @@ configuration.
 Put your configuration code here, except for variables that should be set
 before packages are loaded."
 
+  ;; ------------------------------------------------------------------
+  ;;  基本 Emacs & Spacemacs 设置 (从 Doom 配置中借鉴)
+  ;; ------------------------------------------------------------------
+
+  ;; 设置主题 (如果 Spacemacs 的主题层没有设置，或你想覆盖)
+  ;; 在 Spacemacs 中，主题通常通过 dotspacemacs-themes 变量在 init.el 中设置，
+  ;; 如果你在此处设置，会覆盖 Spacemacs 层级的主题。
+  ;; 如果你的 Spacemacs 已经配置了主题，可以考虑注释掉或删除此行。
+  ;; (setq doom-theme 'doom-one) ; Doom Emacs 的主题，在 Spacemacs 中可能需要相应主题包
+
+  ;; 显示行号 (Spacemacs 默认可能已开启，但此行可确保)
+  (setq display-line-numbers-type t)
+
+  ;; 符号字体与主字体保持一致
+  ;; 注意：Spacemacs 通常通过 layer 管理字体，此设置可能需要搭配你的 Spacemacs 字体层
+  ;; (setq doom-symbol-font doom-font) ;; 这里的 doom-font 变量在 Spacemacs 中可能未定义或有不同行为，谨慎使用
+
+  ;; 1. 设置 Emacs 启动时最大化窗口
+  ;; 推荐使用 initial-frame-alist，因为它只影响第一个启动的 Emacs 窗口
+  (add-to-list 'initial-frame-alist '(fullscreen . maximized))
+  ;; 如果你希望所有新创建的 frame 也最大化，可以使用 default-frame-alist
+  ;; 但通常 initial-frame-alist 已经足够
+  (add-to-list 'default-frame-alist '(fullscreen . maximized))
+
+  ;; 2. 启动时启用 big-font-mode (需确保 doom-big-font-mode 函数可用，Spacemacs 默认可能不提供此函数)
+  ;; 在 Spacemacs 中，这通常由 ui layer 提供，或者你需要自定义一个函数。
+  ;; 如果没有相应的 layer 或函数，此行会报错。
+  ;; 如果你希望在 Spacemacs 中实现类似功能，可以考虑使用 `text-scale-adjust` 或配置 Spacemacs 的字体层。
+  ;; 例如: (add-hook 'window-setup-hook (lambda () (text-scale-set 2)))
+  ;; 为了兼容性，我暂时注释掉 Doom 的特定函数，请根据你的 Spacemacs UI layer 调整。
+  ;; (add-hook 'window-setup-hook #'doom-big-font-mode)
+
+  ;; ------------------------------------------------------------------
+  ;;  Dired 配置
+  ;; ------------------------------------------------------------------
+  ;; 解决 dired-quick-sort 警告的配置
+  ;; 确保 ls-lisp 使用外部 ls 程序，而非 Emacs Lisp 实现
+  (setq ls-lisp-use-insert-directory-program t)
+
+  ;; ------------------------------------------------------------------
+  ;;  Org Mode 和 Org-roam 配置
+  ;; ------------------------------------------------------------------
+  ;; Org-roam 笔记的存储目录，通常是你的主 org-directory 的一个子目录。
+  ;; 确保这个目录存在。
+  ;; `org-directory` 必须在 org 包加载前设置，已在你原有配置中，此为重申
+  (setq org-directory "~/org/")
+  (setq org-roam-directory (file-truename "~/org/roam/"))
+  (setq org-daily-reflection-dailies-directory "~/org/roam/daily")
 
 
-;; --- Org Mode 和 Org-roam 配置 ---
-;; Org-roam 笔记的存储目录，通常是你的主 org-directory 的一个子目录。
-;; 确保这个目录存在。
-(setq org-directory "~/org/")
-(setq org-roam-directory (file-truename "~/org/roam/"))
+  ;; --- 自动创建相关目录 (从 Doom 配置中借鉴) ---
+  ;; 如果这些目录不存在，就自动创建它们并给出提示
+  (unless (file-directory-p org-directory)
+    (make-directory org-directory t)
+    (message "Org 目录 '%s' 已创建。" org-directory))
 
-;;按照时间一次打开多个日志文件
-(setq org-daily-reflection-dailies-directory "~/org/roam/daily")
+  (unless (file-directory-p org-roam-directory)
+    (make-directory org-roam-directory t)
+    (message "Org-roam 目录 '%s' 已创建。" org-roam-directory))
 
-;;动态追踪agenda－files，完成的TODO自动排除
-;;* dynamic agenda https://github.com/brianmcgillion/doomd/blob/master/config.org
-  ;; https://d12frosted.io/posts/2021-01-16-task-management-with-roam-vol5.html
-  ;; The 'roam-agenda' tag is used to tell vulpea that there is a todo item in this file
+
+  ;; 动态追踪 agenda-files，完成的TODO自动排除
   (add-to-list 'org-tags-exclude-from-inheritance "roam-agenda")
 
-  (require 'vulpea)
+  ;; 使用 use-package 管理 vulpea (你的原有配置，已优化)
+  (use-package vulpea
+    :config
+    (defun vulpea-buffer-p ()
+      "Return non-nil if the currently visited buffer is a note."
+      (and buffer-file-name
+           (string-prefix-p
+            (expand-file-name (file-name-as-directory org-roam-directory))
+            (file-name-directory buffer-file-name))))
 
-  (defun vulpea-buffer-p ()
-    "Return non-nil if the currently visited buffer is a note."
-    (and buffer-file-name
-         (string-prefix-p
-          (expand-file-name (file-name-as-directory org-roam-directory))
-          (file-name-directory buffer-file-name))))
+    (defun vulpea-project-p ()
+      "Return non-nil if current buffer has any todo entry.
+      TODO entries marked as done are ignored, meaning the this
+      function returns nil if current buffer contains only completed tasks."
+      (seq-find
+       (lambda (type) (eq type 'todo))
+       (org-element-map (org-element-parse-buffer 'headline)
+                        'headline
+                        (lambda (h) (org-element-property :todo-type h)))))
 
-  (defun vulpea-project-p ()
-    "Return non-nil if current buffer has any todo entry.
+    (defun vulpea-project-update-tag (&optional arg)
+      "Update PROJECT tag in the current buffer."
+      (interactive "P")
+      (when (and (not (active-minibuffer-window))
+                 (vulpea-buffer-p))
+        (save-excursion
+          (goto-char (point-min))
+          (let* ((tags (vulpea-buffer-tags-get))
+                 (original-tags tags))
+            (if (vulpea-project-p)
+                (setq tags (cons "roam-agenda" tags))
+              (setq tags (remove "roam-agenda" tags)))
+            (setq tags (seq-uniq tags)) ; cleanup duplicates
+            (when (or (seq-difference tags original-tags)
+                      (seq-difference original-tags tags))
+              (apply #'vulpea-buffer-tags-set tags)))))))
 
-TODO entries marked as done are ignored, meaning the this
-function returns nil if current buffer contains only completed
-tasks."
-    (seq-find                                 ; (3)
-     (lambda (type)
-       (eq type 'todo))
-     (org-element-map                         ; (2)
-         (org-element-parse-buffer 'headline) ; (1)
-         'headline
-       (lambda (h)
-         (org-element-property :todo-type h)))))
-
-  (defun vulpea-project-update-tag (&optional arg)
-    "Update PROJECT tag in the current buffer."
-    (interactive "P")
-    (when (and (not (active-minibuffer-window))
-               (vulpea-buffer-p))
-      (save-excursion
-        (goto-char (point-min))
-        (let* ((tags (vulpea-buffer-tags-get))
-               (original-tags tags))
-          (if (vulpea-project-p)
-              (setq tags (cons "roam-agenda" tags))
-            (setq tags (remove "roam-agenda" tags)))
-
-          ;; cleanup duplicates
-          (setq tags (seq-uniq tags))
-
-          ;; update tags if changed
-          (when (or (seq-difference tags original-tags)
-                    (seq-difference original-tags tags))
-            (apply #'vulpea-buffer-tags-set tags))))))
-
-  ;; https://systemcrafters.net/build-a-second-brain-in-emacs/5-org-roam-hacks/
+  ;; Org-roam 动态 agenda 辅助函数 (你的原有配置)
   (defun my/org-roam-filter-by-tag (tag-name)
     (lambda (node)
       (member tag-name (org-roam-node-tags node))))
 
   (defun my/org-roam-list-notes-by-tag (tag-name)
     (mapcar #'org-roam-node-file
-            (seq-filter
-             (my/org-roam-filter-by-tag tag-name)
-             (org-roam-node-list))))
+            (seq-filter (my/org-roam-filter-by-tag tag-name)
+                        (org-roam-node-list))))
 
   (defun dynamic-agenda-files-advice (orig-val)
     (let ((roam-agenda-files (delete-dups (my/org-roam-list-notes-by-tag "roam-agenda"))))
       (cl-union orig-val roam-agenda-files :test #'equal)))
 
+  ;; 钩子和 advice
   (add-hook 'before-save-hook #'vulpea-project-update-tag)
   (advice-add 'org-agenda-files :filter-return #'dynamic-agenda-files-advice)
 
+  ;; Org-roam UI 配置 (你的原有配置)
+  (setq org-roam-completion-everywhere t)
+  (use-package websocket :after org-roam)
+  (use-package org-roam-ui
+    :after org-roam
+    :config
+    (setq org-roam-ui-sync-theme t
+          org-roam-ui-follow t
+          org-roam-ui-update-on-save t
+          org-roam-ui-open-on-start t))
 
-(setq org-roam-completion-everywhere t)
-
-(use-package websocket
-  :after org-roam)
-
-(use-package org-roam-ui
-              :after org-roam ;; or :after org
-              ;;         normally we'd recommend hooking orui after org-roam, but since org-roam does not have
-              ;;         a hookable mode anymore, you're advised to pick something yourself
-              ;;         if you don't care about startup time, use
-              ;;  :hook (after-init . org-roam-ui-mode)
-              :config
-              (setq org-roam-ui-sync-theme t
-                    org-roam-ui-follow t
-                    org-roam-ui-update-on-save t
-                    org-roam-ui-open-on-start t))
-
-;; ---设置consult-ripgrep支持中文搜索，警告：仅在Windows下使用这些代码，linux不要乱用 ---
-(set-language-environment "UTF-8")
-;; (prefer-coding-system 'gbk)
-(add-to-list 'process-coding-system-alist
-             '("[rR][gG]" . (utf-8 . gbk-dos)))
-(setq-default buffer-file-coding-system 'utf-8-unix)
-(set-charset-priority 'unicode)
-(prefer-coding-system 'utf-8)
-(setq system-time-locale "C")
-
-;; --- 配置pyim输入法 ---
-(require 'pyim)
-(require 'pyim-greatdict)
-(require 'pyim-cregexp-utils)
-(require 'pyim-cstring-utils)
-
-(setq default-input-method "pyim")
-(pyim-default-scheme 'microsoft-shuangpin)
-(pyim-basedict-enable)
-(pyim-greatdict-enable)
-(setq pyim-cloudim 'baidu)
-(setq pyim-cloudim 'google)
-(require 'pyim-dregcache)
-(setq pyim-dcache-backend 'pyim-dregcache)
-;;Emacs 启动时加载 pyim 词库
-(add-hook 'emacs-startup-hook
-          (lambda () (pyim-restart-1 t)))
-
-;; 输入法内切换中英文输入
-(spacemacs/set-leader-keys "oj" #'pyim-toggle-input-ascii)
-
-;;use posframe
-(require 'posframe)
-(setq pyim-page-tooltip 'posframe)
-
-;;取消模糊音
-(setq pyim-pinyin-fuzzy-alist nil)
-
-;; 开启代码搜索中文功能（比如拼音，五笔码等）
-(pyim-isearch-mode 1)
-
-;;让 avy 支持拼音搜索
-(with-eval-after-load 'avy
-  (defun my-avy--regex-candidates (fun regex &optional beg end pred group)
-    (let ((regex (pyim-cregexp-build regex)))
-      (funcall fun regex beg end pred group)))
-  (advice-add 'avy--regex-candidates :around #'my-avy--regex-candidates))
-
-;;让 vertico, selectrum 等补全框架，通过 orderless 支持拼音搜索候选项功能
-(defun my-orderless-regexp (orig-func component)
-  (let ((result (funcall orig-func component)))
-    (pyim-cregexp-build result)))
-
-(advice-add 'orderless-regexp :around #'my-orderless-regexp)
-
-;;使用其它字符翻页
-(define-key pyim-mode-map "." 'pyim-page-next-page)
-(define-key pyim-mode-map "," 'pyim-page-previous-page)
-
-;; 确保 Pyim 在 Minibuffer 中显示时，候选词显示在下一行
-(with-eval-after-load 'pyim-page
-  ;; 重新定义 minibuffer 样式下的格式化函数
-  (cl-defmethod pyim-page-info-format ((_style (eql minibuffer)) page-info)
-    "将 PAGE-INFO 格式化为选词框中显示的字符串，实现输入内容和候选词分行显示。
-     例如：
-     nihao
-     1.你好 2.你号 ... (1/9)
-    "
-    (let* ((preview-string (pyim-page-preview-create
-                            (plist-get page-info :scheme)))
-           (assistant-suffix (if (plist-get page-info :assistant-enable) " (辅)" ""))
-           (menu-string (pyim-page-menu-create
-                         (plist-get page-info :candidates)
-                         (plist-get page-info :position)
-                         nil
-                         (plist-get page-info :hightlight-current)))
-           (current-page (plist-get page-info :current-page))
-           (total-page (plist-get page-info :total-page)))
-      ;; 调整这里，将预览部分和候选词部分分开
-      (format "%s%s\n%s (%s/%s)"
-              preview-string
-              assistant-suffix
-              menu-string
-              current-page
-              total-page))))
+  ;; 精简 Org-roam node find 搜索结果显示 (从 Doom 配置中借鉴)
+  (with-eval-after-load 'org-roam
+    ;; Sets the display template for Org-roam nodes in completion interfaces.
+    ;; Displays the node's type, followed by its tags, then its hierarchy.
+    (setq org-roam-node-display-template "${title} ${doom-tags:42} ${doom-hierarchy:*}"))
 
 
-  )
+  ;; Org-ql 搜索目录递归 (从 Doom 配置中借鉴)
+  (setq org-ql-search-directories-files-recursive t)
 
+  ;; Org-drill 修复 (从 Doom 配置中借鉴)
+  (with-eval-after-load 'org-drill
+    (defun org-drill-time-to-inactive-org-timestamp (time)
+      "Convert TIME into org-mode timestamp."
+      ;; 确保这里使用的格式与当前 org-mode 的期望一致
+      ;; 注意：这可能需要根据你的 Org-mode 版本进行调整
+      (format-time-string (concat "[" (cdr org-time-stamp-formats) "]") time)))
+
+  ;; ------------------------------------------------------------------
+  ;;  编码设置 (保留你原有的有效配置)
+  ;; ------------------------------------------------------------------
+  ;; ---设置consult-ripgrep支持中文搜索，警告：仅在Windows下使用这些代码，linux不要乱用 ---
+  (set-language-environment "UTF-8")
+  ;; (prefer-coding-system 'gbk)
+  (add-to-list 'process-coding-system-alist
+               '("[rR][gG]" . (utf-8 . gbk-dos)))
+  (setq-default buffer-file-coding-system 'utf-8-unix)
+  (set-charset-priority 'unicode)
+  (prefer-coding-system 'utf-8)
+  (setq system-time-locale "C")
+
+  ;; --- 解决 find note 出现文件名乱码的问题 (从 Doom 配置中借鉴) ---
+  ;; 这段代码通过 advice-add 修改了 projectile 的内部函数，强制其以 UTF-8 解码外部命令的输出。
+  ;; 对于 Windows 下的乱码问题，这是一个非常好的解决方案。
+  (defun projectile-files-via-ext-command@decode-utf-8 (root command)
+    "Advice override `projectile-files-via-ext-command' to decode shell output."
+    (when (stringp command)
+      (let ((default-directory root))
+        (with-temp-buffer
+          (shell-command command t "*projectile-files-errors*")
+          (decode-coding-region (point-min) (point-max) 'utf-8) ;; ++ 关键的解码行
+          (let ((shell-output (buffer-substring (point-min) (point-max))))
+            (split-string (string-trim shell-output) "\0" t))))))
+
+  (advice-add 'projectile-files-via-ext-command
+              :override 'projectile-files-via-ext-command@decode-utf-8)
+
+  ;; ------------------------------------------------------------------
+  ;;  Deft 配置 (从 Doom 配置中借鉴并优化)
+  ;; ------------------------------------------------------------------
+  (setq deft-directory "~/org/")
+  (setq deft-recursive t)
+  (setq deft-extensions '("txt" "md" "org"))
+  (setq deft-parse-org t) ;; 如果你的 Org 文件包含 Org-mode 语法，启用解析
+
+  ;; 优化 deft 搜索结果显示为 title 而不是 property
+  (defun cm/deft-parse-title (file contents)
+    "Parse the given FILE and CONTENTS and determine the title.
+    If `deft-use-filename-as-title' is nil, the title is taken to
+    be the first non-empty line of the FILE. Else the base name of the FILE is
+    used as title."
+    (let ((begin (string-match "^#\\+[tT][iI][tT][lL][eE]: .*$" contents)))
+      (if begin
+          (string-trim (substring contents begin (match-end 0)) "#\\+[tT][iI][tT][lL][eE]: *" "[\n\t ]+")
+        (deft-base-filename file))))
+
+  (advice-add 'deft-parse-title :override #'cm/deft-parse-title)
+
+  (setq deft-strip-summary-regexp
+        (concat "\\("
+                "[\n\t]" ;; blank
+                "\\|^#\\+[[:alpha:]_]+:.*$" ;; org-mode metadata
+                "\\|^:PROPERTIES:\n\\(.+\n\\)+:END:\n"
+                "\\)"))
+
+  ;; ------------------------------------------------------------------
+  ;;  输入法 (PyIM) 配置
+  ;; ------------------------------------------------------------------
+  (use-package pyim
+    :init
+    ;; 确保 PyIM 在需要时加载并激活默认输入法
+    (setq default-input-method "pyim")
+    :config
+    (require 'pyim-greatdict)
+    (require 'pyim-cregexp-utils)
+    (require 'pyim-cstring-utils)
+
+    ;; 设置默认的 PyIM 方案
+    (pyim-default-scheme 'microsoft-shuangpin)
+
+    ;; 启用基础词库
+    (pyim-basedict-enable)
+    ;; 启用大词库
+    (pyim-greatdict-enable)
+
+    ;; **仅启用百度云词库，谷歌云词库保持注释状态**
+    (setq pyim-cloudim 'baidu)
+    ;;(setq pyim-cloudim 'google) ;; 谷歌云词库已注释
+
+    ;; 启用词库缓存
+    (require 'pyim-dregcache)
+    (setq pyim-dcache-backend 'pyim-dregcache)
+
+    ;; 移除或注释掉这个 `emacs-startup-hook`，
+    ;; PyIM 会在 `default-input-method` 设置后自动处理词库加载。
+    ;; (add-hook 'emacs-startup-hook
+    ;;           (lambda () (pyim-restart-1 t)))
+
+    ;; 输入法内切换中英文输入
+    (global-set-key (kbd "C-c i") 'pyim-toggle-input-ascii)
+
+    ;; use posframe
+    (require 'posframe)
+    (setq pyim-page-tooltip 'posframe)
+
+    ;;取消模糊音
+    (setq pyim-pinyin-fuzzy-alist nil)
+
+    ;; 开启代码搜索中文功能（比如拼音，五笔码等）
+    (pyim-isearch-mode 1))
+
+  ;; 让 vertico, selectrum 等补全框架，通过 orderless 支持拼音搜索候选项功能
+  (use-package orderless
+    :config
+    (defun my-orderless-regexp (orig-func component)
+      (let ((result (funcall orig-func component)))
+        (pyim-cregexp-build result)))
+    (advice-add 'orderless-regexp :around #'my-orderless-regexp))
+
+  ;; PyIM 翻页和 Minibuffer 样式 (你的原有配置，已优化)
+  (with-eval-after-load 'pyim-page
+    ;; 使用其它字符翻页
+    (define-key pyim-mode-map "." 'pyim-page-next-page)
+    (define-key pyim-mode-map "," 'pyim-page-previous-page)
+
+    ;; 确保 Pyim 在 Minibuffer 中显示时，候选词显示在下一行 (你的原有配置)
+    ;; 定义一个建议函数，用于修改 pyim-page-info-format 的行为
+    (defun my-pyim-page-info-format-minibuffer-advice (original-function style page-info)
+      ;; 如果当前样式是 minibuffer (Minibuffer显示模式)
+      (if (eq style 'minibuffer)
+          ;; 使用自定义的格式字符串：拼音在第一行，候选词在第二行
+          (format "%s%s:\n%s(%s/%s)" ; 注意这里的 \n (换行符)
+                  ;; 生成拼音预览字符串
+                  (pyim-page-preview-create
+                   (plist-get page-info :scheme))
+                  ;; 辅助输入法提示 (如果有)
+                  (if (plist-get page-info :assistant-enable) " (辅)" "")
+                  ;; 生成候选词列表字符串
+                  (pyim-page-menu-create
+                   (plist-get page-info :candidates)
+                   (plist-get page-info :position)
+                   nil ; 没有行分隔符
+                   (plist-get page-info :hightlight-current))
+                  ;; 当前页码
+                  (plist-get page-info :current-page)
+                  ;; 总页数
+                  (plist-get page-info :total-page))
+        ;; 如果是其他显示样式，则调用原始的 pyim-page-info-format 函数
+        (funcall original-function style page-info)))
+
+    ;; 将我们的建议函数添加到 pyim-page-info-format 函数上
+    (advice-add 'pyim-page-info-format :around #'my-pyim-page-info-format-minibuffer-advice)
+
+    ;; 可选：如果两行显示后 Minibuffer 高度不够，可以尝试增加 Minibuffer 的最大高度
+    ;; (setq max-mini-window-height 5) ; 根据需要调整此值
+    )
+
+  ;; ------------------------------------------------------------------
+  ;;  其他全局配置
+  ;; ------------------------------------------------------------------
+  ;; 设置连续按fd等于ESC (从 Doom 配置中借鉴)
+  (setq evil-escape-key-sequence "fd")
+
+  ;; 启用 word-wrap-whitespace-mode (你的原有配置)
+  (global-word-wrap-whitespace-mode 1)
+)
 
 ;; Do not write anything past this comment. This is where Emacs will
 ;; auto-generate custom variable definitions.
@@ -815,6 +934,7 @@ This function is called at the very end of Spacemacs initialization."
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(line-number-mode t)
+ '(org-agenda-files '("~/org/todo.org"))
  '(package-selected-packages
    '(ace-jump-helm-line ace-link aggressive-indent all-the-icons auto-compile
                         auto-highlight-symbol auto-yasnippet browse-at-remote
