@@ -102,7 +102,7 @@ This function should only modify configuration layer settings."
                                       org-daily-reflection
                                       org-drill
                                       deft
-vulpea
+                                      vulpea
    )
 
    ;; A list of packages that cannot be updated.
@@ -761,34 +761,34 @@ If you are unsure, try setting them in `dotspacemacs/user-config' first."
   ;;------------------------------------------------------------------
   ;;  编码设置 (尤其适用于 Windows 环境)
   ;;------------------------------------------------------------------
-  ;; 设置语言环境为 UTF-8。
-  (set-language-environment "UTF-8")
-  ;; 将 ripgrep 进程的编码设置为 UTF-8 输入和 GBK-DOS 输出，用于解决 Windows 下中文搜索乱码。
-  (add-to-list 'process-coding-system-alist
-               '("[rR][gG]" . (utf-8 . gbk-dos)))
-  ;; 默认文件编码为 UTF-8 (Unix 风格换行符)。
-  (setq-default buffer-file-coding-system 'utf-8-unix)
-  ;; 优先使用 Unicode 字符集。
-  (set-charset-priority 'unicode)
-  ;; 优先使用 UTF-8 编码系统。
-  (prefer-coding-system 'utf-8)
-  ;; 设置系统时间区域为 "C" (通用语言环境)，避免某些中文显示问题。
-  (setq system-time-locale "C")
+  ;; ;; 设置语言环境为 UTF-8。
+  ;; (set-language-environment "UTF-8")
+  ;; ;; 将 ripgrep 进程的编码设置为 UTF-8 输入和 GBK-DOS 输出，用于解决 Windows 下中文搜索乱码。
+  ;; (add-to-list 'process-coding-system-alist
+  ;;              '("[rR][gG]" . (utf-8 . gbk-dos)))
+  ;; ;; 默认文件编码为 UTF-8 (Unix 风格换行符)。
+  ;; (setq-default buffer-file-coding-system 'utf-8-unix)
+  ;; ;; 优先使用 Unicode 字符集。
+  ;; (set-charset-priority 'unicode)
+  ;; ;; 优先使用 UTF-8 编码系统。
+  ;; (prefer-coding-system 'utf-8)
+  ;; ;; 设置系统时间区域为 "C" (通用语言环境)，避免某些中文显示问题。
+  ;; (setq system-time-locale "C")
 
-  ;; 解决 `find note` (Projectile) 出现文件名乱码的问题。
-  ;; 通过 advice 强制 Projectile 以 UTF-8 解码外部命令的输出。
-  (defun projectile-files-via-ext-command@decode-utf-8 (root command)
-    "Override `projectile-files-via-ext-command' 以 UTF-8 解码 shell 输出。"
-    (when (stringp command)
-      (let ((default-directory root))
-        (with-temp-buffer
-          (shell-command command t "*projectile-files-errors*")
-          (decode-coding-region (point-min) (point-max) 'utf-8) ;; 关键的解码行
-          (let ((shell-output (buffer-substring (point-min) (point-max))))
-            (split-string (string-trim shell-output) "\0" t))))))
+  ;; ;; 解决 `find note` (Projectile) 出现文件名乱码的问题。
+  ;; ;; 通过 advice 强制 Projectile 以 UTF-8 解码外部命令的输出。
+  ;; (defun projectile-files-via-ext-command@decode-utf-8 (root command)
+  ;;   "Override `projectile-files-via-ext-command' 以 UTF-8 解码 shell 输出。"
+  ;;   (when (stringp command)
+  ;;     (let ((default-directory root))
+  ;;       (with-temp-buffer
+  ;;         (shell-command command t "*projectile-files-errors*")
+  ;;         (decode-coding-region (point-min) (point-max) 'utf-8) ;; 关键的解码行
+  ;;         (let ((shell-output (buffer-substring (point-min) (point-max))))
+  ;;           (split-string (string-trim shell-output) "\0" t))))))
 
-  (advice-add 'projectile-files-via-ext-command
-              :override 'projectile-files-via-ext-command@decode-utf-8)
+  ;; (advice-add 'projectile-files-via-ext-command
+  ;;             :override 'projectile-files-via-ext-command@decode-utf-8)
 
   ;;------------------------------------------------------------------
   ;;  Deft 笔记管理配置
