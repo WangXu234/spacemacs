@@ -623,6 +623,8 @@ If you are unsure, try setting them in `dotspacemacs/user-config' first."
   此函数在 Spacemacs 启动的最后阶段，即层配置完成后调用。
   在此处放置你的配置代码，但那些需要在包加载前设置的变量除外。"
 
+  ;; 设置日程在系统内通知Add your preferred alert style
+  (setq alert-default-style 'notifications)
   ;;------------------------------------------------------------------
   ;;  通用设置
   ;;------------------------------------------------------------------
@@ -899,6 +901,7 @@ If you are unsure, try setting them in `dotspacemacs/user-config' first."
     ;; 可选：如果两行显示后 Minibuffer 高度不够，可以尝试增加 Minibuffer 的最大高度。
     ;; (setq max-mini-window-height 5) ; 根据需要调整此值
     )
+
 )
 
 ;; Do not write anything past this comment. This is where Emacs will
@@ -913,6 +916,8 @@ This function is called at the very end of Spacemacs initialization."
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(custom-safe-themes
+   '("01f347a923dd21661412d4c5a7c7655bf17fb311b57ddbdbd6fce87bd7e58de6" default))
  '(line-number-mode t)
  '(org-agenda-files '("~/org/todo.org"))
  '(package-selected-packages
@@ -934,16 +939,17 @@ This function is called at the very end of Spacemacs initialization."
                         evil-visual-mark-mode evil-visualstar expand-region
                         eyebrowse fancy-battery flycheck-elsa flycheck-package
                         flycheck-pos-tip gh-md git-link git-messenger git-modes
-                        git-timemachine gitignore-templates gnuplot golden-ratio
-                        google-translate helm-ag helm-c-yasnippet helm-comint
-                        helm-company helm-descbinds helm-git-grep helm-ls-git
-                        helm-make helm-mode-manager helm-org helm-org-rifle
-                        helm-projectile helm-purpose helm-swoop helm-themes
-                        helm-xref hide-comnt highlight-indentation
-                        highlight-numbers highlight-parentheses hl-todo
-                        holy-mode htmlize hungry-delete hybrid-mode indent-guide
-                        info+ inspector link-hint lorem-ipsum macrostep magit
-                        markdown-toc multi-line mwim nameless open-junk-file
+                        git-timemachine gitignore-templates gnome-dark-style
+                        gnuplot golden-ratio google-translate helm-ag
+                        helm-c-yasnippet helm-comint helm-company helm-descbinds
+                        helm-git-grep helm-ls-git helm-make helm-mode-manager
+                        helm-org helm-org-rifle helm-projectile helm-purpose
+                        helm-swoop helm-themes helm-xref hide-comnt
+                        highlight-indentation highlight-numbers
+                        highlight-parentheses hl-todo holy-mode htmlize
+                        hungry-delete hybrid-mode indent-guide info+ inspector
+                        link-hint lorem-ipsum macrostep magit markdown-toc
+                        multi-line mwim nameless open-junk-file
                         org-agenda-files-track org-cliplink org-contrib
                         org-download org-drill org-mime org-modern org-pomodoro
                         org-present org-projectile org-ql org-rich-yank
