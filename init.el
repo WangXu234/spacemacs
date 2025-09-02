@@ -32,7 +32,7 @@ This function should only modify configuration layer settings."
 
    ;; List of configuration layers to load.
    dotspacemacs-configuration-layers
-   '(
+   '(python
      ;; ----------------------------------------------------------------
      ;; Example of useful layers you may want to use right away.
      ;; Uncomment some layer names and press `SPC f e R' (Vim style) or
@@ -51,15 +51,14 @@ This function should only modify configuration layer settings."
                       auto-completion-enable-sort-by-usage t)
      better-defaults
      (chinese :variables
-              chinese-conv-backend "cconv"
-              chinese-enable-youdao-dict t)
-     ;; emacs-lisp
+              chinese-conv-backend "cconv")
+     ;;emacs-lisp
      ;;helm
-     ;; lsp
+     ;;lsp
      (compleseus :variables
-                 compleseus-engine 'vertico
-                 compleseus-consult-preview-keys '("M-." "C-SPC" :debounce 0.5 "<up>" "<down>")
-                 )
+                  compleseus-engine 'vertico
+                  compleseus-consult-preview-keys '("M-." "C-SPC" :debounce 0.5 "<up>" "<down>")
+                  )
      markdown
      ;;multiple-cursors
      (org :variables
@@ -70,7 +69,6 @@ This function should only modify configuration layer settings."
           org-enable-roam-support t
           org-enable-roam-ui t
           org-enable-valign t
-          org-enable-appear-support t
           )
      ;; (shell :variables
      ;;        shell-default-height 30
@@ -87,6 +85,7 @@ This function should only modify configuration layer settings."
                       version-control-global-margin t)
      (unicode-fonts)
      treemacs
+     epub
      )
 
    ;; List of additional packages that will be installed without being wrapped
@@ -760,6 +759,7 @@ If you are unsure, try setting them in `dotspacemacs/user-config' first."
   ;; 钩子和 advice：将动态文件列表注入 `org-agenda-files` 的关键步骤。
   (advice-add 'org-agenda-files :filter-return #'dynamic-agenda-files-advice)
 
+
   ;;------------------------------------------------------------------
   ;;  编码设置 (尤其适用于 Windows 环境)
   ;;------------------------------------------------------------------
@@ -921,50 +921,57 @@ This function is called at the very end of Spacemacs initialization."
  '(line-number-mode t)
  '(org-agenda-files '("~/org/todo.org"))
  '(package-selected-packages
-   '(ace-jump-helm-line ace-link aggressive-indent all-the-icons auto-compile
-                        auto-highlight-symbol auto-yasnippet browse-at-remote
-                        centered-cursor-mode clean-aindent-mode closql
-                        code-review column-enforce-mode company-quickhelp
-                        company-statistics consult-notes consult-org-roam
-                        define-word devdocs diff-hl diminish dired-quick-sort
-                        disable-mouse dotenv-mode drag-stuff dumb-jump
-                        edit-indirect elisp-def elisp-demos elisp-slime-nav
-                        emacsql emr eval-sexp-fu evil-anzu evil-args
-                        evil-cleverparens evil-collection evil-easymotion
-                        evil-escape evil-evilified-state evil-exchange
-                        evil-goggles evil-iedit-state evil-indent-plus evil-lion
-                        evil-lisp-state evil-matchit evil-mc evil-multiedit
-                        evil-nerd-commenter evil-numbers evil-org evil-surround
-                        evil-textobj-line evil-tutor evil-unimpaired
-                        evil-visual-mark-mode evil-visualstar expand-region
-                        eyebrowse fancy-battery flycheck-elsa flycheck-package
-                        flycheck-pos-tip gh-md git-link git-messenger git-modes
-                        git-timemachine gitignore-templates gnome-dark-style
-                        gnuplot golden-ratio google-translate helm-ag
-                        helm-c-yasnippet helm-comint helm-company helm-descbinds
-                        helm-git-grep helm-ls-git helm-make helm-mode-manager
-                        helm-org helm-org-rifle helm-projectile helm-purpose
-                        helm-swoop helm-themes helm-xref hide-comnt
-                        highlight-indentation highlight-numbers
-                        highlight-parentheses hl-todo holy-mode htmlize
-                        hungry-delete hybrid-mode indent-guide info+ inspector
-                        link-hint lorem-ipsum macrostep magit markdown-toc
+   '(ace-jump-helm-line ace-link aggressive-indent all-the-icons anaconda-mode
+                        auto-compile auto-highlight-symbol auto-yasnippet
+                        blacken browse-at-remote bui centered-cursor-mode
+                        clean-aindent-mode closql code-cells code-review
+                        column-enforce-mode company-anaconda company-quickhelp
+                        company-statistics concurrent consult-notes
+                        consult-org-roam ctable cython-mode dap-mode define-word
+                        devdocs diff-hl diminish dired-quick-sort disable-mouse
+                        dotenv-mode drag-stuff dumb-jump edit-indirect elisp-def
+                        elisp-demos elisp-slime-nav emacsql emr epc eval-sexp-fu
+                        evil-anzu evil-args evil-cleverparens evil-collection
+                        evil-easymotion evil-escape evil-evilified-state
+                        evil-exchange evil-goggles evil-iedit-state
+                        evil-indent-plus evil-lion evil-lisp-state evil-matchit
+                        evil-mc evil-multiedit evil-nerd-commenter evil-numbers
+                        evil-org evil-surround evil-textobj-line evil-tutor
+                        evil-unimpaired evil-visual-mark-mode evil-visualstar
+                        expand-region eyebrowse fancy-battery flycheck-elsa
+                        flycheck-package flycheck-pos-tip ggtags gh-md git-link
+                        git-messenger git-modes git-timemachine
+                        gitignore-templates gnome-dark-style gnuplot
+                        golden-ratio google-translate helm helm-ag
+                        helm-c-yasnippet helm-comint helm-company helm-core
+                        helm-cscope helm-descbinds helm-git-grep helm-ls-git
+                        helm-make helm-mode-manager helm-org helm-org-rifle
+                        helm-projectile helm-purpose helm-pydoc helm-swoop
+                        helm-themes helm-xref hide-comnt highlight-indentation
+                        highlight-numbers highlight-parentheses hl-todo
+                        holy-mode htmlize hungry-delete hybrid-mode importmagic
+                        indent-guide info+ inspector link-hint live-py-mode
+                        load-env-vars lorem-ipsum lsp-docker lsp-mode
+                        lsp-pyright lsp-treemacs macrostep magit markdown-toc
                         multi-line mwim nameless open-junk-file
                         org-agenda-files-track org-cliplink org-contrib
-                        org-download org-drill org-mime org-modern org-pomodoro
-                        org-present org-projectile org-ql org-rich-yank
-                        org-roam-ql org-super-agenda org-superstar orgit
-                        overseer page-break-lines paradox password-generator
-                        pcre2el popwin pyim quickrun rainbow-delimiters
-                        restart-emacs smeargle space-doc spaceline
-                        spacemacs-purpose-popwin spacemacs-whitespace-cleanup
+                        org-download org-drill org-mime org-modern org-node
+                        org-pomodoro org-present org-projectile org-ql
+                        org-rich-yank org-roam-ql org-super-agenda org-superstar
+                        orgit overseer page-break-lines paradox
+                        password-generator pcre2el pip-requirements pipenv
+                        pippel poetry popwin py-isort pydoc pyenv-mode pyim
+                        pylookup pytest pythonic pyvenv quickrun
+                        rainbow-delimiters reformatter restart-emacs ruff-format
+                        smeargle space-doc spaceline spacemacs-purpose-popwin
+                        spacemacs-whitespace-cleanup sphinx-doc
                         string-edit-at-point string-inflection symbol-overlay
                         symon term-cursor toc-org transient treemacs-evil
                         treemacs-icons-dired treemacs-magit treemacs-persp
                         treemacs-projectile undo-fu undo-fu-session unfill
-                        uuidgen vi-tilde-fringe volatile-highlights vundo wgrep
-                        winum with-editor writeroom-mode ws-butler
-                        yasnippet-snippets))
+                        uuidgen vi-tilde-fringe volatile-highlights vundo
+                        wfnames wgrep winum with-editor writeroom-mode ws-butler
+                        xcscope yapfify yasnippet-snippets))
  '(safe-local-variable-values
    '((eval require 'magit-utils nil t) (toc-org-max-depth . 2)
      (org-hide-macro-markers . t) (buffer-file-coding-system . utf-8-unix)
