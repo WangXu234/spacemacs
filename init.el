@@ -498,14 +498,15 @@ It should only modify the values of Spacemacs settings."
    ;; List of search tool executable names. Spacemacs uses the first installed
    ;; tool of the list. Supported tools are `rg', `ag', `pt', `ack' and `grep'.
    ;; (default '("rg" "ag" "pt" "ack" "grep"))
-   dotspacemacs-search-tools '("rg" "ag" "pt" "ack" "grep")
+   dotspacemacs-search-tools `(set (const "rg") (const "ag") (const "ack") (const "grep"))'
+   ;; dotspacemacs-search-tools '("rg" "ag" "pt" "ack" "grep")
 
    ;; The backend used for undo/redo functionality. Possible values are
    ;; `undo-fu', `undo-redo' and `undo-tree' see also `evil-undo-system'.
    ;; Note that saved undo history does not get transferred when changing
    ;; your undo system. The default is currently `undo-fu' as `undo-tree'
    ;; is not maintained anymore and `undo-redo' is very basic."
-   dotspacemacs-undo-system 'undo-fu
+   dotspacemacs-undo-system `undo-fu
 
    ;; Format specification for setting the frame title.
    ;; %a - the `abbreviated-file-name', or `buffer-name'
@@ -652,8 +653,6 @@ If you are unsure, try setting them in `dotspacemacs/user-config' first."
     (make-directory org-roam-directory t)
     (message "Org-roam 目录 '%s' 已创建。" org-roam-directory))
 
-  ;; 确保 'roam-agenda' 标签不会被子标题继承，这是 Org Agenda 的重要设置。
-  (add-to-list 'org-tags-exclude-from-inheritance "roam-agenda")
 
   ;; Org-roam UI 配置
   ;; 启用 Org-roam UI 的相关功能，如全局补全、主题同步、跟随当前笔记等。
@@ -759,6 +758,8 @@ If you are unsure, try setting them in `dotspacemacs/user-config' first."
   ;; 钩子和 advice：将动态文件列表注入 `org-agenda-files` 的关键步骤。
   (advice-add 'org-agenda-files :filter-return #'dynamic-agenda-files-advice)
 
+  ;; 确保 'roam-agenda' 标签不会被子标题继承，这是 Org Agenda 的重要设置。
+  (add-to-list 'org-tags-exclude-from-inheritance "roam-agenda")
 
   ;;------------------------------------------------------------------
   ;;  编码设置 (尤其适用于 Windows 环境)
@@ -833,7 +834,7 @@ If you are unsure, try setting them in `dotspacemacs/user-config' first."
     (require 'pyim-cstring-utils)
 
     ;; 设置默认的 PyIM 方案为微软双拼。
-    (pyim-default-scheme 'microsoft-shuangpin)
+    (pyim-default-scheme 'ziranma-shuangpin)
 
     ;; 启用基础词库和大词库。
     (pyim-basedict-enable)
