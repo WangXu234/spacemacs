@@ -56,9 +56,9 @@ This function should only modify configuration layer settings."
      ;;helm
      ;;lsp
      (compleseus :variables
-                  compleseus-engine 'vertico
-                  compleseus-consult-preview-keys '("M-." "C-SPC" :debounce 0.5 "<up>" "<down>")
-                  )
+                 compleseus-engine 'vertico
+                 compleseus-consult-preview-keys '("M-." "C-SPC" :debounce 0.5 "<up>" "<down>")
+                 )
      markdown
      ;;multiple-cursors
      (org :variables
@@ -102,7 +102,7 @@ This function should only modify configuration layer settings."
                                       org-drill
                                       deft
                                       vulpea
-   )
+                                      )
 
    ;; A list of packages that cannot be updated.
    dotspacemacs-frozen-packages '()
@@ -598,12 +598,12 @@ configuration.
 It is mostly for variables that should be set before packages are loaded.
 If you are unsure, try setting them in `dotspacemacs/user-config' first."
 
-(setq package-archives '(("gnu"    . "https://mirrors.tuna.tsinghua.edu.cn/elpa/gnu/")
-                         ("nongnu" . "https://mirrors.tuna.tsinghua.edu.cn/elpa/nongnu/")
-                         ("melpa"  . "https://mirrors.tuna.tsinghua.edu.cn/elpa/melpa/")))
-(package-initialize) ;; You might already have this line
+  (setq package-archives '(("gnu"    . "https://mirrors.tuna.tsinghua.edu.cn/elpa/gnu/")
+                           ("nongnu" . "https://mirrors.tuna.tsinghua.edu.cn/elpa/nongnu/")
+                           ("melpa"  . "https://mirrors.tuna.tsinghua.edu.cn/elpa/melpa/")))
+  (package-initialize) ;; You might already have this line
 
-(setq evil-want-keybinding nil)
+  (setq evil-want-keybinding nil)
 
   ;; remove startup auto-evilification messages:
   (with-eval-after-load 'org-agenda
@@ -696,23 +696,23 @@ If you are unsure, try setting them in `dotspacemacs/user-config' first."
         (let ((has-active-todo nil)
               (has-future-timestamp nil))
           (org-element-map (org-element-parse-buffer 'headline) 'headline
-            (lambda (headline)
-              (let* ((todo-type (org-element-property :todo-type headline))
-                     (todo-state (org-element-property :todo-keyword headline))
-                     (timestamps (org-element-property :timestamps headline)))
-                ;; 检查活跃的 TODO 状态
-                (when (and todo-type
-                           (not (member todo-state org-done-keywords)))
-                  (setq has-active-todo t))
-                ;; 检查未来 DEADLINE 或 SCHEDULED 时间戳
-                (when timestamps
-                  (dolist (ts timestamps)
-                    (when (member (org-element-property :type ts) '(deadline scheduled))
-                      (let* ((date-list (org-element-property :date ts))
-                             (time (when date-list (apply #'encode-time date-list)))
-                             (in-future (and time (time-less-p (current-time) (org-clear-time time)))))
-                        (when in-future
-                          (setq has-future-timestamp t)))))))))
+                           (lambda (headline)
+                             (let* ((todo-type (org-element-property :todo-type headline))
+                                    (todo-state (org-element-property :todo-keyword headline))
+                                    (timestamps (org-element-property :timestamps headline)))
+                               ;; 检查活跃的 TODO 状态
+                               (when (and todo-type
+                                          (not (member todo-state org-done-keywords)))
+                                 (setq has-active-todo t))
+                               ;; 检查未来 DEADLINE 或 SCHEDULED 时间戳
+                               (when timestamps
+                                 (dolist (ts timestamps)
+                                   (when (member (org-element-property :type ts) '(deadline scheduled))
+                                     (let* ((date-list (org-element-property :date ts))
+                                            (time (when date-list (apply #'encode-time date-list)))
+                                            (in-future (and time (time-less-p (current-time) (org-clear-time time)))))
+                                       (when in-future
+                                         (setq has-future-timestamp t)))))))))
           (or has-active-todo has-future-timestamp))))
 
     ;; 更新笔记文件标签的函数：根据活跃条目添加或移除 'roam-agenda' 标签。
@@ -834,7 +834,7 @@ If you are unsure, try setting them in `dotspacemacs/user-config' first."
     (require 'pyim-cstring-utils)
 
     ;; 设置默认的 PyIM 方案为微软双拼。
-    (pyim-default-scheme 'ziranma-shuangpin)
+    (pyim-default-scheme 'microsoft-shuangpin)
 
     ;; 启用基础词库和大词库。
     (pyim-basedict-enable)
@@ -903,7 +903,7 @@ If you are unsure, try setting them in `dotspacemacs/user-config' first."
     ;; (setq max-mini-window-height 5) ; 根据需要调整此值
     )
 
-)
+  )
 
 ;; Do not write anything past this comment. This is where Emacs will
 ;; auto-generate custom variable definitions.
@@ -912,86 +912,86 @@ If you are unsure, try setting them in `dotspacemacs/user-config' first."
 This is an auto-generated function, do not modify its content directly, use
 Emacs customize menu instead.
 This function is called at the very end of Spacemacs initialization."
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(custom-safe-themes
-   '("01f347a923dd21661412d4c5a7c7655bf17fb311b57ddbdbd6fce87bd7e58de6" default))
- '(line-number-mode t)
- '(org-agenda-files '("~/org/todo.org"))
- '(package-selected-packages
-   '(ace-jump-helm-line ace-link aggressive-indent all-the-icons anaconda-mode
-                        auto-compile auto-highlight-symbol auto-yasnippet
-                        blacken browse-at-remote bui centered-cursor-mode
-                        clean-aindent-mode closql code-cells code-review
-                        column-enforce-mode company-anaconda company-quickhelp
-                        company-statistics concurrent consult-notes
-                        consult-org-roam ctable cython-mode dap-mode define-word
-                        devdocs diff-hl diminish dired-quick-sort disable-mouse
-                        dotenv-mode drag-stuff dumb-jump edit-indirect elisp-def
-                        elisp-demos elisp-slime-nav emacsql emr epc eval-sexp-fu
-                        evil-anzu evil-args evil-cleverparens evil-collection
-                        evil-easymotion evil-escape evil-evilified-state
-                        evil-exchange evil-goggles evil-iedit-state
-                        evil-indent-plus evil-lion evil-lisp-state evil-matchit
-                        evil-mc evil-multiedit evil-nerd-commenter evil-numbers
-                        evil-org evil-surround evil-textobj-line evil-tutor
-                        evil-unimpaired evil-visual-mark-mode evil-visualstar
-                        expand-region eyebrowse fancy-battery flycheck-elsa
-                        flycheck-package flycheck-pos-tip ggtags gh-md git-link
-                        git-messenger git-modes git-timemachine
-                        gitignore-templates gnome-dark-style gnuplot
-                        golden-ratio google-translate helm helm-ag
-                        helm-c-yasnippet helm-comint helm-company helm-core
-                        helm-cscope helm-descbinds helm-git-grep helm-ls-git
-                        helm-make helm-mode-manager helm-org helm-org-rifle
-                        helm-projectile helm-purpose helm-pydoc helm-swoop
-                        helm-themes helm-xref hide-comnt highlight-indentation
-                        highlight-numbers highlight-parentheses hl-todo
-                        holy-mode htmlize hungry-delete hybrid-mode importmagic
-                        indent-guide info+ inspector link-hint live-py-mode
-                        load-env-vars lorem-ipsum lsp-docker lsp-mode
-                        lsp-pyright lsp-treemacs macrostep magit markdown-toc
-                        multi-line mwim nameless open-junk-file
-                        org-agenda-files-track org-cliplink org-contrib
-                        org-download org-drill org-mime org-modern org-node
-                        org-pomodoro org-present org-projectile org-ql
-                        org-rich-yank org-roam-ql org-super-agenda org-superstar
-                        orgit overseer page-break-lines paradox
-                        password-generator pcre2el pip-requirements pipenv
-                        pippel poetry popwin py-isort pydoc pyenv-mode pyim
-                        pylookup pytest pythonic pyvenv quickrun
-                        rainbow-delimiters reformatter restart-emacs ruff-format
-                        smeargle space-doc spaceline spacemacs-purpose-popwin
-                        spacemacs-whitespace-cleanup sphinx-doc
-                        string-edit-at-point string-inflection symbol-overlay
-                        symon term-cursor toc-org transient treemacs-evil
-                        treemacs-icons-dired treemacs-magit treemacs-persp
-                        treemacs-projectile undo-fu undo-fu-session unfill
-                        uuidgen vi-tilde-fringe volatile-highlights vundo
-                        wfnames wgrep winum with-editor writeroom-mode ws-butler
-                        xcscope yapfify yasnippet-snippets))
- '(safe-local-variable-values
-   '((eval require 'magit-utils nil t) (toc-org-max-depth . 2)
-     (org-hide-macro-markers . t) (buffer-file-coding-system . utf-8-unix)
-     (eval auto-fill-mode t) (eval require 'ox-texinfo+ nil t)
-     (eval require 'ol-info) (org-src-preserve-indentation . t)
-     (org-src-preserve-indentation) (eval require 'ol-man nil t)
-     (eval require 'magit-base nil t) (eval require 'org-make-toc)
-     (eval when (featurep 'toc-org) (toc-org-mode)) (org-list-indent-offset . 1)
-     (toc-org-max-depth . 4)))
- '(warning-suppress-log-types
-   '((package reinitialization) (package reinitialization)
-     (files missing-lexbind-cookie
-            "~/.emacs.d/elpa/pyim-greatdict-20170725.62510/pyim-greatdict.el")
-     (use-package))))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(company-tooltip-common ((t (:inherit company-tooltip :weight bold :underline nil))))
- '(company-tooltip-common-selection ((t (:inherit company-tooltip-selection :weight bold :underline nil)))))
-)
+  (custom-set-variables
+   ;; custom-set-variables was added by Custom.
+   ;; If you edit it by hand, you could mess it up, so be careful.
+   ;; Your init file should contain only one such instance.
+   ;; If there is more than one, they won't work right.
+   '(custom-safe-themes
+     '("01f347a923dd21661412d4c5a7c7655bf17fb311b57ddbdbd6fce87bd7e58de6" default))
+   '(line-number-mode t)
+   '(org-agenda-files '("~/org/todo.org"))
+   '(package-selected-packages
+     '(ace-jump-helm-line ace-link aggressive-indent all-the-icons anaconda-mode
+       auto-compile auto-highlight-symbol auto-yasnippet
+       blacken browse-at-remote bui centered-cursor-mode
+       clean-aindent-mode closql code-cells code-review
+       column-enforce-mode company-anaconda company-quickhelp
+       company-statistics concurrent consult-notes
+       consult-org-roam ctable cython-mode dap-mode define-word
+       devdocs diff-hl diminish dired-quick-sort disable-mouse
+       dotenv-mode drag-stuff dumb-jump edit-indirect elisp-def
+       elisp-demos elisp-slime-nav emacsql emr epc eval-sexp-fu
+       evil-anzu evil-args evil-cleverparens evil-collection
+       evil-easymotion evil-escape evil-evilified-state
+       evil-exchange evil-goggles evil-iedit-state
+       evil-indent-plus evil-lion evil-lisp-state evil-matchit
+       evil-mc evil-multiedit evil-nerd-commenter evil-numbers
+       evil-org evil-surround evil-textobj-line evil-tutor
+       evil-unimpaired evil-visual-mark-mode evil-visualstar
+       expand-region eyebrowse fancy-battery flycheck-elsa
+       flycheck-package flycheck-pos-tip ggtags gh-md git-link
+       git-messenger git-modes git-timemachine
+       gitignore-templates gnome-dark-style gnuplot
+       golden-ratio google-translate helm helm-ag
+       helm-c-yasnippet helm-comint helm-company helm-core
+       helm-cscope helm-descbinds helm-git-grep helm-ls-git
+       helm-make helm-mode-manager helm-org helm-org-rifle
+       helm-projectile helm-purpose helm-pydoc helm-swoop
+       helm-themes helm-xref hide-comnt highlight-indentation
+       highlight-numbers highlight-parentheses hl-todo
+       holy-mode htmlize hungry-delete hybrid-mode importmagic
+       indent-guide info+ inspector link-hint live-py-mode
+       load-env-vars lorem-ipsum lsp-docker lsp-mode
+       lsp-pyright lsp-treemacs macrostep magit markdown-toc
+       multi-line mwim nameless open-junk-file
+       org-agenda-files-track org-cliplink org-contrib
+       org-download org-drill org-mime org-modern org-node
+       org-pomodoro org-present org-projectile org-ql
+       org-rich-yank org-roam-ql org-super-agenda org-superstar
+       orgit overseer page-break-lines paradox
+       password-generator pcre2el pip-requirements pipenv
+       pippel poetry popwin py-isort pydoc pyenv-mode pyim
+       pylookup pytest pythonic pyvenv quickrun
+       rainbow-delimiters reformatter restart-emacs ruff-format
+       smeargle space-doc spaceline spacemacs-purpose-popwin
+       spacemacs-whitespace-cleanup sphinx-doc
+       string-edit-at-point string-inflection symbol-overlay
+       symon term-cursor toc-org transient treemacs-evil
+       treemacs-icons-dired treemacs-magit treemacs-persp
+       treemacs-projectile undo-fu undo-fu-session unfill
+       uuidgen vi-tilde-fringe volatile-highlights vundo
+       wfnames wgrep winum with-editor writeroom-mode ws-butler
+       xcscope yapfify yasnippet-snippets))
+   '(safe-local-variable-values
+     '((eval require 'magit-utils nil t) (toc-org-max-depth . 2)
+       (org-hide-macro-markers . t) (buffer-file-coding-system . utf-8-unix)
+       (eval auto-fill-mode t) (eval require 'ox-texinfo+ nil t)
+       (eval require 'ol-info) (org-src-preserve-indentation . t)
+       (org-src-preserve-indentation) (eval require 'ol-man nil t)
+       (eval require 'magit-base nil t) (eval require 'org-make-toc)
+       (eval when (featurep 'toc-org) (toc-org-mode)) (org-list-indent-offset . 1)
+       (toc-org-max-depth . 4)))
+   '(warning-suppress-log-types
+     '((package reinitialization) (package reinitialization)
+       (files missing-lexbind-cookie
+        "~/.emacs.d/elpa/pyim-greatdict-20170725.62510/pyim-greatdict.el")
+       (use-package))))
+  (custom-set-faces
+   ;; custom-set-faces was added by Custom.
+   ;; If you edit it by hand, you could mess it up, so be careful.
+   ;; Your init file should contain only one such instance.
+   ;; If there is more than one, they won't work right.
+   '(company-tooltip-common ((t (:inherit company-tooltip :weight bold :underline nil))))
+   '(company-tooltip-common-selection ((t (:inherit company-tooltip-selection :weight bold :underline nil)))))
+  )
